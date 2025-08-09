@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>포켓몬 18타입 | 90종 | 퀘스트(5/10/특정타입) | 도감/교체 | 가방5 | 상성 | 상태이상 | KO레벨업 | 다이맥스/거다이맥스</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { --vw: 900px; --vh: 560px; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#cfe8b5; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+  #wrap { width: var(--vw); margin: 20px auto; display:grid; grid-template-columns: 260px 1fr; gap:12px; }
+  #bag { background:#fff; border-radius:12px; padding:12px; box-shadow:0 6px 16px rgba(0,0,0,.1); }
+  #bag h3 { margin:0 0 8px; font-size:15px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #bag small { color:#64748b; font-weight:600; }
+  #party { list-style:none; margin:8px 0 0; padding:0; max-height:240px; overflow:auto; }
+  #party li { background:#f6f8fb; margin-bottom:6px; padding:8px; border-radius:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #party li .meta { font-size:13px; }
+  #party li .hp { font-size:12px; color:#475569; }
+  #party li .btn { background:#2563eb; color:#fff; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:12px; }
+  #party li.fainted { opacity:.6; }
+  #party li.active { outline:2px solid #2563eb; }
+  .toolbar { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .toolbar .btn { background:#0ea5e9; color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700; font-size:12px; }
+  .toolbar .btn.secondary { background:#64748b; }
+  .badge { display:inline-block; padding:2px 6px; border-radius:999px; background:#eef2ff; color:#3730a3; font-weight:700; font-size:11px; }
+  .band { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#374151; }
+  .band .dot { width:10px; height:10px; border-radius:50%; background:#ef4444; box-shadow:0 0 8px #ef4444aa; }
+  .band.off .dot { background:#9ca3af; box-shadow:none; }
+
+  #questBox { margin-top:10px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:10px; padding:10px; color:#1f2937; font-size:12px; }
+  #questBox h4 { margin:0 0 8px; font-size:13px; }
+  .qitem { margin:4px 0; }
+  .qdone { color:#059669; font-weight:700; }
+  .qtype { font-weight:700; }
+
+  #game { position: relative; height: var(--vh); background:#88c070; border-radius:12px; overflow:hidden; box-shadow:0 6px 16px rgba(0,0,0,.12); }
+  #camera { position:absolute; inset:0; overflow:hidden; }
+  #map { position:absolute; width:2000px; height:1200px; background:
+    linear-gradient(#7ecb5a,#7ecb5a) padding-box,
+    repeating-linear-gradient(0deg, transparent 0 38px, rgba(255,255,255,.06) 38px 40px),
+    repeating-linear-gradient(90deg, transparent 0 38px, rgba(255,255,255,.06) 38px 40px);
+    border: 16px solid #6bb14a; border-radius:6px; }
+  .grass { position:absolute; background: repeating-linear-gradient(45deg,#5aa94a 0 6px,#67bd57 6px 12px); border-radius:8px; opacity:.9; }
+  .road { position:absolute; background:#c9b48a; border:2px dashed #ad976c; border-radius:8px; }
+  #center { position:absolute; width:260px; height:160px; background:#fff; border:3px solid #ef4444; border-radius:12px; left:1550px; top:300px; box-shadow:0 6px 16px rgba(0,0,0,.15); }
+  #center::before { content:"포켓몬센터"; position:absolute; left:0; right:0; top:-28px; text-align:center; font-weight:800; color:#ef4444; text-shadow:0 1px 0 #fff; }
+  #centerDoor { position:absolute; width:60px; height:70px; left:100px; bottom:0; background:#ef4444; border:4px solid #b91c1c; border-bottom:none; border-radius:10px 10px 0 0; }
+  #player { position:absolute; width:28px; height:28px; border-radius:50%; background:#2b2b2b; box-shadow:0 0 0 3px #ffd166 inset; }
+  #hud { position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:space-between; pointer-events:none; }
+  .pill { background:#00000040; color:#fff; padding:6px 10px; border-radius:999px; font-size:12px; }
+
+  /* 배틀 */
+  #battle { position:absolute; inset:0; background:#fff; display:none; }
+  #battle .stage { position:absolute; inset:0; padding:14px; display:grid; grid-template-rows: 1fr auto; gap:8px; }
+  .arena { position:relative; background:linear-gradient(#e7f0ff, #cde6ff 50%, #def5d6 50%, #bfe9b2); border-radius:10px; box-shadow: inset 0 0 40px rgba(0,0,0,.08); }
+  .side { position:absolute; width:50%; height:100%; top:0; display:flex; align-items:flex-end; justify-content:center; }
+  .left { left:0; } .right { right:0; align-items:center; }
+  canvas.sprite { width:240px; height:240px; image-rendering: pixelated; transition: transform .2s, filter .2s; }
+  #playerMon.gmax { transform: scale(1.35); filter: drop-shadow(0 0 16px rgba(239,68,68,.6)); }
+  .bars { position:absolute; left:12px; right:12px; top:8px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  .card { background:#f7f9fc; border:1px solid #e4ecf5; border-radius:10px; padding:8px; }
+  .name { font-weight:700; font-size:14px; margin-bottom:4px; display:flex; gap:8px; align-items:center; }
+  .status { font-size:11px; padding:2px 6px; border-radius:999px; background:#fde68a; color:#92400e; }
+  .hpbar { height:12px; background:#e9eef3; border-radius:999px; overflow:hidden; }
+  .hpbar>div { height:100%; transition:width .25s; }
+  .hp-green { background:#43aa8b; } .hp-yellow{ background:#f9c74f; } .hp-red{ background:#f94144; }
+  #log { background:#0f172a; color:#dbeafe; height:110px; border-radius:10px; padding:10px; overflow:auto; font-size:14px; }
+  #actions { display:flex; flex-wrap:wrap; gap:8px; }
+  button.btn { background:#2563eb; color:#fff; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; }
+  button.btn.secondary { background:#64748b; }
+  button.btn.warn { background:#ef4444; }
+  button.btn:disabled { opacity:.5; cursor:not-allowed; }
+
+  /* 오버레이 */
+  .overlay { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); }
+  .cardBox { background:#fff; border-radius:12px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.2); }
+
+  #centerCard { width:420px; }
+  #centerCard .row { display:flex; gap:8px; flex-wrap:wrap; }
+  #centerCard .btn { padding:8px 12px; border-radius:10px; border:none; background:#10b981; color:#fff; cursor:pointer; font-weight:700; }
+  #centerCard .btn.close { background:#64748b; }
+
+  #dexUI { z-index: 5; }
+  #dexCard { width: 700px; }
+  #dexHeader { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  #dexList { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; max-height: 360px; overflow:auto; }
+  .dexItem { border:2px solid #e5e7eb; border-radius:10px; padding:8px; display:flex; gap:8px; align-items:center; cursor:pointer; }
+  .dexItem.sel { border-color:#2563eb; box-shadow:0 0 0 2px #2563eb33 inset; }
+  .dexMeta { font-size:13px; }
+  .dexMeta .sub { color:#64748b; font-size:12px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <aside id="bag">
+    <h3>
+      🎒 내 포켓몬 <small id="capInfo">0 / 5</small>
+    </h3>
+    <div class="band off" id="bandInfo"><span class="dot"></span> 다이맥스 밴드: 없음</div>
+    <ul id="party"></ul>
+    <div class="toolbar">
+      <button id="openDexBtn" class="btn">📘 도감 열기</button>
+      <button id="healBtn" class="btn secondary" title="센터 앞 E키와 동일">💖 전원 회복</button>
+    </div>
+    <div id="questBox">
+      <h4>🗒️ 퀘스트</h4>
+      <div id="qCatch5" class="qitem">5마리 잡기: 0/5</div>
+      <div id="qCatch10" class="qitem">10마리 잡기: 0/10</div>
+      <div id="qType" class="qitem">특정 타입(3마리): -</div>
+    </div>
+    <hr />
+    <div style="font-size:12px;color:#475569;line-height:1.5">
+      • 방향키 이동, 잔디에서 배틀 발생<br>
+      • <b>센터 문 앞에서 E</b> → 즉시 전원 회복<br>
+      • HP 0은 <b>기절</b> (교체/치료 필요)<br>
+      • <b>중복 포획</b>: 도감 비등록, 파티 동일 종 <b>레벨 +1</b><br>
+      • <b>독</b>: 독 기술 맞으면 상태이상, <b>5초마다 -2</b>(전투 중)<br>
+      • <b>가방 제한</b>: 최대 <b>5마리</b><br>
+      • <b>KO 보상</b>: 쓰러뜨린 내 포켓몬 <b>레벨 +1</b><br>
+      • <b>다이맥스 밴드</b>: <b>퀘스트</b> ‘포켓몬 5마리 잡기’ 완료 보상<br>
+      • <b>도감 교체</b>: 도감에서 포켓몬을 <u>클릭</u> → 좌측 파티에서 <u>교체할 칸</u> 클릭
+    </div>
+  </aside>
+
+  <main id="game">
+    <div id="camera">
+      <div id="map">
+        <div class="road" style="left:200px; top:200px; width:1200px; height:60px;"></div>
+        <div class="road" style="left:1200px; top:200px; width:60px; height:500px;"></div>
+        <div class="grass" style="left:280px; top:320px; width:500px; height:260px;"></div>
+        <div class="grass" style="left:900px; top:620px; width:380px; height:260px;"></div>
+        <div class="grass" style="left:1400px; top:120px; width:420px; height:260px;"></div>
+        <div class="grass" style="left:300px; top:820px; width:520px; height:240px;"></div>
+        <div id="center"><div id="centerDoor" title="E키로 즉시 회복"></div></div>
+        <div id="player" title="플레이어"></div>
+      </div>
+    </div>
+
+    <div id="hud">
+      <div class="pill" id="tip">잔디에서 야생 포켓몬이 나타납니다</div>
+      <div class="pill" id="where">—</div>
+    </div>
+
+    <!-- 배틀 -->
+    <section id="battle">
+      <div class="stage">
+        <div class="arena">
+          <div class="bars">
+            <div class="card">
+              <div class="name" id="pName">피카츄 Lv.5 <span id="pStatus" class="status" style="display:none"></span></div>
+              <div class="hpbar"><div id="pHP" class="hp-green" style="width:100%"></div></div>
+            </div>
+            <div class="card">
+              <div class="name" id="wName">??? Lv.3 <span id="wStatus" class="status" style="display:none"></span></div>
+              <div class="hpbar"><div id="wHP" class="hp-green" style="width:100%"></div></div>
+            </div>
+          </div>
+          <div class="side left"><canvas id="playerMon" class="sprite" width="240" height="240"></canvas></div>
+          <div class="side right"><canvas id="wildMon" class="sprite" width="240" height="240"></canvas></div>
+        </div>
+        <div>
+          <div id="log"></div>
+          <div id="actions">
+            <button id="act1" class="btn">스킬1</button>
+            <button id="act2" class="btn">스킬2</button>
+            <button id="act3" class="btn">스킬3</button>
+            <button id="gmaxBtn" class="btn" style="display:none;background:#ef4444;">거다이맥스</button>
+            <button id="switchBtn" class="btn secondary">교체</button>
+            <button id="catchBtn" class="btn secondary" disabled>포획하기</button>
+            <button id="runBtn" class="btn warn">도망</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 센터 UI -->
+    <div id="centerUI" class="overlay">
+      <div id="centerCard" class="cardBox">
+        <h4>🧪 포켓몬 치료기</h4>
+        <p style="margin-top:4px; color:#334155; font-size:14px;">버튼을 누르면 파티의 모든 포켓몬이 즉시 회복됩니다.</p>
+        <div class="row" style="margin-top:10px;">
+          <button id="healAll" class="btn">전원 회복</button>
+          <button id="closeCenter" class="btn close">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 도감 UI -->
+    <div id="dexUI" class="overlay">
+      <div id="dexCard" class="cardBox">
+        <div id="dexHeader">
+          <h4>📘 도감 (잡은 종만 표시)</h4>
+          <button id="closeDex" class="btn" style="background:#64748b; border:none; padding:8px 12px; border-radius:10px; color:#fff; cursor:pointer; font-weight:700;">닫기</button>
+        </div>
+        <div id="dexList"></div>
+        <p id="dexHint" style="margin-top:8px; color:#334155; font-size:12px;">
+          도감 카드를 클릭해 <b>교체 소스</b>를 선택한 뒤, 좌측 파티에서 <b>교체할 칸</b>을 클릭하세요.
+        </p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* =========================
+   1) 타입/기술/도감(18타입 × 5 = 90종)
+========================= */
+const TYPES = [
+  'electric','fire','water','grass','rock','flying','poison','ice','psychic','ground',
+  'normal','fighting','bug','ghost','dragon','dark','steel','fairy'
+];
+
+const TYPE_KO = {
+  electric:'전기', fire:'불꽃', water:'물', grass:'풀', rock:'바위', flying:'비행', poison:'독', ice:'얼음', psychic:'에스퍼', ground:'땅',
+  normal:'노말', fighting:'격투', bug:'벌레', ghost:'고스트', dragon:'드래곤', dark:'악', steel:'강철', fairy:'페어리'
+};
+
+const BASE_NAMES = {
+  electric:['전깃벌','볼트쥐','스파크링','라이트온','써지팝'],
+  fire:['불도마','화염구리','홍염냥','플레어링','블레이즈'],
+  water:['물방울','파도링','해초군','버블핀','디프블루'],
+  grass:['풀몽','새싹톱','리프레오','모스코','바질러'],
+  rock:['돌톤','바위동','그랜아이','석크랩','오팔런'],
+  flying:['밤부엉','윈드윙','제트버드','스카이링','게일핀'],
+  poison:['독해골','톡시드','베놈핵','퍼플링','스모그런'],
+  ice:['서리핵','스노브','아이스팡','프리짓','글레이즈'],
+  psychic:['멘탈링','텔레오','오라큐브','드림핀','에스피온트'],
+  ground:['두더링','샌드백','클레이혼','테라몰','퀘이크'],
+  normal:['초원쥐','달리토끼','배부르곰','스텝캣','모노톤'],
+  fighting:['파워펀치','킥몽','태클러','암브레이커','호전랑'],
+  bug:['잎사귀벌','비틀링','캐터래프','하니비','비틀프라임'],
+  ghost:['고스트핵','쉐이드핀','나이트볼','스펙트라','망령링'],
+  dragon:['새끼룡','비늘링','스카이드래','테라드래','최상룡'],
+  dark:['다크펭','나이트울프','섀도우링','문도그','블랙캣'],
+  steel:['금속두더','아이언펭','메탈클로','기어링','티타늄'],
+  fairy:['요정씨앗','스윗벨','문피스','핑크링','루미엘']
+};
+
+const TYPE_MOVESETS = {
+  electric: [
+    {id:'thunder', label:'⚡ 100만 볼트', power:14, effect:'paralyze', mtype:'electric'},
+    {id:'quick',   label:'빠른공격', power:9, mtype:'normal'},
+    {id:'charge',  label:'충전(회복)', power:0, effect:'heal', amount:0.2, mtype:'electric'}
+  ],
+  fire: [
+    {id:'flame',   label:'화염방사', power:13, mtype:'fire'},
+    {id:'scratch', label:'할퀴기', power:9, mtype:'normal'},
+    {id:'warm',    label:'온열(회복)', power:0, effect:'heal', amount:0.18, mtype:'fire'}
+  ],
+  water: [
+    {id:'surf',    label:'파도타기', power:13, mtype:'water'},
+    {id:'splash',  label:'물보라', power:9, mtype:'water'},
+    {id:'soothe',  label:'수분보호(회복)', power:0, effect:'heal', amount:0.18, mtype:'water'}
+  ],
+  grass: [
+    {id:'leaf',    label:'리프블레이드', power:13, mtype:'grass'},
+    {id:'vine',    label:'덩굴채찍', power:9, mtype:'grass'},
+    {id:'photosyn',label:'광합성(회복)', power:0, effect:'heal', amount:0.22, mtype:'grass'}
+  ],
+  rock: [
+    {id:'slide',   label:'록슬라이드', power:13, mtype:'rock'},
+    {id:'throw',   label:'바위던지기', power:9, mtype:'rock'},
+    {id:'harden',  label:'경화(소회복)', power:0, effect:'heal', amount:0.16, mtype:'rock'}
+  ],
+  flying: [
+    {id:'aircut',  label:'에어컷터', power:12, mtype:'flying'},
+    {id:'peck',    label:'쪼기', power:9, mtype:'flying'},
+    {id:'draft',   label:'상승기류(소회복)', power:0, effect:'heal', amount:0.16, mtype:'flying'}
+  ],
+  poison: [
+    {id:'jab',     label:'독찌르기', power:12, mtype:'poison'},
+    {id:'smog',    label:'스모그', power:9,  mtype:'poison'},
+    {id:'toxheal', label:'해독(소회복)', power:0, effect:'heal', amount:0.16, mtype:'poison'}
+  ],
+  ice: [
+    {id:'beam',    label:'얼음빔', power:13, mtype:'ice'},
+    {id:'shard',   label:'얼음조각', power:9, mtype:'ice'},
+    {id:'frost',   label:'서리보호(소회복)', power:0, effect:'heal', amount:0.16, mtype:'ice'}
+  ],
+  psychic: [
+    {id:'psy',     label:'사이코키네시스', power:13, mtype:'psychic'},
+    {id:'confuse', label:'혼란파동', power:9, mtype:'psychic'},
+    {id:'focus',   label:'명상(회복)', power:0, effect:'heal', amount:0.2, mtype:'psychic'}
+  ],
+  ground: [
+    {id:'quake',   label:'지진', power:14, mtype:'ground'},
+    {id:'throw',   label:'흙덩이던지기', power:9, mtype:'ground'},
+    {id:'brace',   label:'단단해지기(소회복)', power:0, effect:'heal', amount:0.16, mtype:'ground'}
+  ],
+  normal: [
+    {id:'tackle',  label:'몸통박치기', power:11, mtype:'normal'},
+    {id:'quick',   label:'속공', power:9, mtype:'normal'},
+    {id:'rest',    label:'휴식(회복)', power:0, effect:'heal', amount:0.18, mtype:'normal'}
+  ],
+  fighting: [
+    {id:'punch',   label:'메가펀치', power:13, mtype:'fighting'},
+    {id:'kick',    label:'하이킥', power:12, mtype:'fighting'},
+    {id:'guard',   label:'기합(소회복)', power:0, effect:'heal', amount:0.14, mtype:'fighting'}
+  ],
+  bug: [
+    {id:'bite',    label:'벌레먹음', power:11, mtype:'bug'},
+    {id:'cut',     label:'실베기', power:10, mtype:'bug'},
+    {id:'cocoon',  label:'고치(소회복)', power:0, effect:'heal', amount:0.14, mtype:'bug'}
+  ],
+  ghost: [
+    {id:'shadow',  label:'섀도볼', power:13, mtype:'ghost'},
+    {id:'lick',    label:'핥기', power:9, mtype:'ghost'},
+    {id:'veil',    label:'영혼보호(소회복)', power:0, effect:'heal', amount:0.14, mtype:'ghost'}
+  ],
+  dragon: [
+    {id:'breath',  label:'용의숨결', power:13, mtype:'dragon'},
+    {id:'claw',    label:'드래곤클로', power:12, mtype:'dragon'},
+    {id:'scale',   label:'비늘보호(소회복)', power:0, effect:'heal', amount:0.14, mtype:'dragon'}
+  ],
+  dark: [
+    {id:'bite',    label:'깨물기', power:12, mtype:'dark'},
+    {id:'slash',   label:'야습', power:11, mtype:'dark'},
+    {id:'shroud',  label:'그림자막(소회복)', power:0, effect:'heal', amount:0.14, mtype:'dark'}
+  ],
+  steel: [
+    {id:'iron',    label:'아이언헤드', power:13, mtype:'steel'},
+    {id:'metal',   label:'메탈클로', power:12, mtype:'steel'},
+    {id:'polish',  label:'연마(소회복)', power:0, effect:'heal', amount:0.14, mtype:'steel'}
+  ],
+  fairy: [
+    {id:'moon',    label:'문포스', power:13, mtype:'fairy'},
+    {id:'kiss',    label:'드레이닝키스', power:11, mtype:'fairy'},
+    {id:'charm',   label:'매혹(소회복)', power:0, effect:'heal', amount:0.16, mtype:'fairy'}
+  ]
+};
+
+const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+// 개체 고유 ID
+let __UID = 1;
+const newUID = () => `u${(__UID++).toString(36)}`;
+
+/* 18타입 × 5 = 90종 생성 */
+const DEX = [];
+for (const type of TYPES){
+  const names = BASE_NAMES[type];
+  for (let i=0;i<5;i++){
+    const baseHP = {
+      electric:35, fire:30, water:30, grass:32, rock:34, flying:28, poison:30, ice:29, psychic:28, ground:33,
+      normal:32, fighting:33, bug:28, ghost:29, dragon:34, dark:31, steel:36, fairy:30
+    }[type] || 30;
+    const level = rnd(3,6);
+    const maxHP = Math.round(baseHP + (i*2));
+    const sid = `${type}-${i}`;
+    DEX.push({ sid, type, name:names[i], level, maxHP, moves: TYPE_MOVESETS[type] });
+  }
+}
+
+/* 야생 풀 */
+const wildPool = DEX.map(s=>({ ...s }));
+
+/* =========================
+   2) 상성표/배율 + STAB (18타입)
+========================= */
+const EFFECT = {
+  normal:   { rock:0.5, ghost:0, steel:0.5 },
+
+  fire:     { grass:2, ice:2, bug:2, steel:2, fire:0.5, water:0.5, rock:0.5, dragon:0.5 },
+  water:    { fire:2, ground:2, rock:2, water:0.5, grass:0.5, dragon:0.5 },
+  electric: { water:2, flying:2, electric:0.5, grass:0.5, dragon:0.5, ground:0 },
+  grass:    { water:2, ground:2, rock:2, fire:0.5, grass:0.5, poison:0.5, flying:0.5, bug:0.5, dragon:0.5, steel:0.5 },
+  ice:      { grass:2, ground:2, flying:2, dragon:2, water:0.5, fire:0.5, ice:0.5, steel:0.5 },
+
+  fighting: { normal:2, ice:2, rock:2, dark:2, steel:2, poison:0.5, flying:0.5, psychic:0.5, bug:0.5, fairy:0.5, ghost:0 },
+  poison:   { grass:2, fairy:2, poison:0.5, ground:0.5, rock:0.5, ghost:0.5, steel:0 },
+  ground:   { fire:2, electric:2, poison:2, rock:2, steel:2, grass:0.5, bug:0.5, flying:0 },
+  flying:   { grass:2, fighting:2, bug:2, electric:0.5, rock:0.5, steel:0.5 },
+  psychic:  { fighting:2, poison:2, psychic:0.5, steel:0.5, dark:0 },
+  bug:      { grass:2, psychic:2, dark:2, fire:0.5, fighting:0.5, poison:0.5, flying:0.5, ghost:0.5, steel:0.5, fairy:0.5 },
+
+  rock:     { fire:2, ice:2, flying:2, bug:2, fighting:0.5, ground:0.5, steel:0.5 },
+  ghost:    { psychic:2, ghost:2, dark:0.5, normal:0 },
+  dragon:   { dragon:2, steel:0.5, fairy:0 },
+  dark:     { psychic:2, ghost:2, fighting:0.5, dark:0.5, fairy:0.5 },
+  steel:    { ice:2, rock:2, fairy:2, fire:0.5, water:0.5, electric:0.5, steel:0.5 },
+  fairy:    { fighting:2, dragon:2, dark:2, fire:0.5, poison:0.5, steel:0.5 }
+};
+const STAB = 1.5;
+function typeEffect(mtype, defType){
+  const row = EFFECT[mtype];
+  if (!row) return 1;
+  const v = row[defType];
+  return v ?? 1;
+}
+
+/* =========================
+   3) 상태/유틸/렌더/도감/다이맥스/퀘스트
+========================= */
+const camera = document.getElementById('camera');
+const map = document.getElementById('map');
+const player = document.getElementById('player');
+const center = document.getElementById('center');
+const centerUI = document.getElementById('centerUI');
+const pList = document.getElementById('party');
+const tipEl = document.getElementById('tip');
+const capInfo = document.getElementById('capInfo');
+const bandInfo = document.getElementById('bandInfo');
+
+const dexUI = document.getElementById('dexUI');
+const dexListEl = document.getElementById('dexList');
+
+const qEl5 = document.getElementById('qCatch5');
+const qEl10 = document.getElementById('qCatch10');
+const qElType = document.getElementById('qType');
+
+const state = {
+  world: { w: 2000, h: 1200, vw: 900, vh: 560 },
+  pos: { x: 260, y: 260 },
+  inBattle: false,
+  inGrass: false,
+  party: [
+    { uid: newUID(), sid:'electric-0', name:'피카츄', level:5, maxHP:35, hp:35, type:'electric', moves: TYPE_MOVESETS.electric, fainted:false, status:null, starter:true }
+  ],
+  activeIndex: 0,
+  wild: null,
+  pokedex: {}, // sid -> {name,type,level,caught:true}
+  koAwardedThisBattle: false,
+  dexSwapSid: null,
+  hasDynaBand: false,
+  bandRolledThisBattle: false, // (더이상 사용하지 않음)
+  gmax: { active:false, used:false, turns:0, targetIndex:null, moves:[] },
+  quests: {
+    catch5: { progress:0, goal:5, completed:false },
+    catch10:{ progress:0, goal:10, completed:false },
+    type:   { target: null, progress:0, goal:3, cycles:0 }
+  }
+};
+
+function randomType(){ return TYPES[Math.floor(Math.random()*TYPES.length)]; }
+function ensureTypeQuestTarget(){
+  if (!state.quests.type.target) state.quests.type.target = randomType();
+}
+ensureTypeQuestTarget();
+
+const keys = new Set();
+const clamp = (v,min,max)=>Math.max(min, Math.min(max, v));
+const safe = (v, d)=> (v==null ? d : v);
+function hpPct(mon){ return Math.max(0, Math.round(mon.hp/mon.maxHP*100)); }
+function hpClass(p){ return p>50?'hp-green':p>20?'hp-yellow':'hp-red'; }
+function isFainted(m){ return !m || m.hp<=0; }
+function statusLabel(s){
+  if (!s) return '';
+  if (s.type==='paralysis') return `마비(${s.turns}턴)`;
+  if (s.type==='poison') return `독`;
+  return '';
+}
+function ensureMoves(mon){
+  if (!mon) return null;
+  if (!mon.moves || mon.moves.length<3) mon.moves = TYPE_MOVESETS[mon.type] || TYPE_MOVESETS.normal;
+  return mon;
+}
+function partyCount(){ return state.party.length; }
+function partyHasSid(sid){ return state.party.some(p=>p.sid===sid); }
+
+/* 도감 등록/중복 처리 */
+function registerPokedex(mon){
+  if (!mon) return false;
+  if (!state.pokedex[mon.sid]){
+    state.pokedex[mon.sid] = { name: mon.name, type: mon.type, level: mon.level, caught:true };
+    return true;
+  } else {
+    state.pokedex[mon.sid].level = Math.max(state.pokedex[mon.sid].level, mon.level);
+    return false;
+  }
+}
+
+/* 레벨업 규칙 */
+function levelUp(mon, gain=1){
+  if (!mon) return;
+  mon.level += gain;
+  mon.maxHP += 2*gain;
+  mon.hp = mon.maxHP;
+}
+
+/* DEX → 개체 생성 */
+function createMonFromDex(sid){
+  const dexRec = state.pokedex[sid];
+  const base = DEX.find(d=>d.sid===sid);
+  if (!dexRec || !base) return null;
+  const extra = Math.max(0, (dexRec.level||base.level) - base.level);
+  return {
+    uid: newUID(),
+    sid: base.sid, name: base.name, type: base.type,
+    level: (dexRec.level||base.level),
+    maxHP: base.maxHP + 2*extra,
+    hp: base.maxHP + 2*extra,
+    status:null, fainted:false, moves: TYPE_MOVESETS[base.type]
+  };
+}
+
+/* 파티 렌더 */
+function renderParty(){
+  pList.innerHTML = "";
+  const replaceMode = !!state.dexSwapSid;
+  state.party.forEach((m,i)=>{
+    ensureMoves(m);
+    const li = document.createElement('li');
+    li.classList.toggle('active', i===state.activeIndex);
+    li.classList.toggle('fainted', isFainted(m));
+    const sTxt = m?.status?` · ${statusLabel(m.status)}`:'';
+    const disabled = replaceMode ? '' : (isFainted(m)?'disabled':'');
+    const label = replaceMode ? '여기로 교체' : (i===state.activeIndex?'사용중':'활성화');
+    li.innerHTML = `
+      <div class="meta"><b>${safe(m?.name,'???')}</b> <span class="badge">${safe(m?.type,'?')}</span> Lv.${safe(m?.level,'?')}
+        <div class="hp">HP ${safe(m?.hp,'?')}/${safe(m?.maxHP,'?')}${isFainted(m)?' · 기절':''}${sTxt}</div>
+      </div>
+      <button class="btn" ${disabled}>${label}</button>`;
+    li.querySelector('button').onclick = ()=>{
+      if (state.dexSwapSid){
+        const newMon = createMonFromDex(state.dexSwapSid);
+        if (!newMon){ state.dexSwapSid = null; renderDex(); renderParty(); return; }
+        state.party[i] = newMon;
+        state.activeIndex = i;
+        state.dexSwapSid = null;
+        renderParty(); renderDex();
+        log('✅ 도감에서 선택한 포켓몬으로 교체되었습니다.');
+        if (state.inBattle) syncBattleUI();
+        return;
+      }
+      if (isFainted(m)) return;
+      state.activeIndex = i;
+      renderParty();
+      if (state.inBattle) syncBattleUI();
+    };
+    pList.appendChild(li);
+  });
+  capInfo.textContent = `${partyCount()} / 5`;
+  bandInfo.classList.toggle('off', !state.hasDynaBand);
+  bandInfo.innerHTML = `<span class="dot"></span> 다이맥스 밴드: ${state.hasDynaBand?'보유':'없음'}`;
+  renderQuests();
+}
+
+/* 퀘스트 렌더 */
+function renderQuests(){
+  const q5 = state.quests.catch5;
+  const q10 = state.quests.catch10;
+  const qt = state.quests.type;
+  // 5마리
+  const p5 = Math.min(q5.progress, q5.goal);
+  qEl5.innerHTML = q5.completed
+    ? `5마리 잡기: <span class="qdone">완료</span> (다이맥스 밴드 획득)`
+    : `5마리 잡기: ${p5}/${q5.goal}`;
+  // 10마리
+  const p10 = Math.min(q10.progress, q10.goal);
+  qEl10.innerHTML = q10.completed
+    ? `10마리 잡기: <span class="qdone">완료</span> (파티 전원 레벨 +1 수령)`
+    : `10마리 잡기: ${p10}/${q10.goal}`;
+  // 타입퀘
+  const tname = TYPE_KO[qt.target] || qt.target || '-';
+  qElType.innerHTML = `특정 타입(3마리): <span class="qtype">${tname}</span> ${qt.progress}/${qt.goal} · 완료 ${qt.cycles}회`;
+}
+
+/* 도감 렌더 */
+function renderDex(){
+  dexListEl.innerHTML = "";
+  const entries = Object.entries(state.pokedex);
+  if (entries.length===0){
+    dexListEl.innerHTML = `<div style="grid-column:1/-1; color:#64748b; padding:8px;">아직 잡은 포켓몬이 없습니다.</div>`;
+    return;
+  }
+  entries.sort((a,b)=> a[1].name.localeCompare(b[1].name, 'ko'));
+  for (const [sid, rec] of entries){
+    const inParty = partyHasSid(sid);
+    const canAdd = partyCount()<5 && !inParty;
+    const variant = sid.split('-')[1];
+    const item = document.createElement('div');
+    item.className='dexItem';
+    if (state.dexSwapSid===sid) item.classList.add('sel');
+    item.innerHTML = `
+      <div style="width:40px;height:40px;border-radius:8px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-weight:800;">#${variant}</div>
+      <div class="dexMeta"><b>${rec.name}</b> <span class="badge">${rec.type}</span><br>
+        <span class="sub">최고 Lv.${rec.level}${inParty?' · 파티에 있음':''}</span>
+      </div>
+      <button class="btn" ${canAdd?'':'disabled'}>${inParty?'파티에 있음': (partyCount()>=5?'빈자리 없음':'파티에 넣기')}</button>
+    `;
+    item.addEventListener('click', (ev)=>{
+      if (ev.target && ev.target.tagName==='BUTTON') return;
+      state.dexSwapSid = (state.dexSwapSid===sid ? null : sid);
+      renderDex(); renderParty();
+      if (state.dexSwapSid) log(`교체 모드: 좌측 파티에서 교체할 칸을 클릭하세요.`);
+    });
+    item.querySelector('button').onclick = (ev)=>{
+      ev.stopPropagation();
+      if (partyHasSid(sid)) return;
+      if (partyCount()<5){
+        const newMon = createMonFromDex(sid);
+        if (!newMon) return;
+        state.party.push(newMon);
+        renderParty(); renderDex();
+        log(`${rec.name}이(가) 파티에 합류했습니다!`);
+      }
+    };
+    dexListEl.appendChild(item);
+  }
+}
+
+/* 도감 열기/닫기 */
+document.getElementById('openDexBtn').onclick = ()=>{ dexUI.style.display='flex'; renderDex(); };
+document.getElementById('closeDex').onclick = ()=>{ dexUI.style.display='none'; state.dexSwapSid=null; renderParty(); };
+
+/* =========================
+   4) 이동/센터/입력
+========================= */
+function moveCamera(){
+  const cx = clamp(state.pos.x - state.world.vw/2, 0, state.world.w - state.world.vw);
+  const cy = clamp(state.pos.y - state.world.vh/2, 0, state.world.h - state.world.vh);
+  map.style.left = -cx + "px";
+  map.style.top  = -cy + "px";
+  document.getElementById('where').textContent = `x:${Math.round(state.pos.x)} y:${Math.round(state.pos.y)}`;
+}
+function setPlayerPos(x,y){
+  state.pos.x = clamp(x, 24, state.world.w-24);
+  state.pos.y = clamp(y, 24, state.world.h-24);
+  player.style.left = state.pos.x + "px";
+  player.style.top  = state.pos.y + "px";
+  moveCamera();
+}
+function isOnGrass(){
+  const patches = [...document.querySelectorAll('.grass')];
+  const p = {x:state.pos.x-14, y:state.pos.y-14, w:28, h:28};
+  for (const g of patches){
+    const gx=g.offsetLeft, gy=g.offsetTop, gw=g.offsetWidth, gh=g.offsetHeight;
+    if (p.x<gx+gw && p.x+p.w>gx && p.y<gy+gh && p.y+p.h>gy) return true;
+  }
+  return false;
+}
+document.getElementById('healBtn').onclick = ()=> healAllImmediate();
+
+document.addEventListener('keydown', e=>{
+  keys.add(e.key);
+  if (e.key.toLowerCase()==='e' && nearCenterDoor()){
+    healAllImmediate();
+  }
+});
+document.addEventListener('keyup', e=> keys.delete(e.key));
+
+function nearCenterDoor(){
+  const P = {x:state.pos.x-14, y:state.pos.y-14, w:28, h:28};
+  const door = { x: center.offsetLeft+100, y:center.offsetTop+90, w:60, h:70 };
+  return P.x<door.x+door.w && P.x+P.w>door.x && P.y<door.y+door.h && P.y+P.h>door.y;
+}
+
+function tick(){
+  if (!state.inBattle){
+    let dx=0, dy=0, s=4;
+    if (keys.has('ArrowUp')) dy -= s;
+    if (keys.has('ArrowDown')) dy += s;
+    if (keys.has('ArrowLeft')) dx -= s;
+    if (keys.has('ArrowRight')) dx += s;
+    if (dx||dy){
+      setPlayerPos(state.pos.x+dx, state.pos.y+dy);
+      const onGrass = isOnGrass();
+      if (onGrass && Math.random()<0.07) startEncounter();
+      state.inGrass = onGrass;
+      tipEl.textContent = onGrass ? '잔디(배틀 가능 지역)' : '잔디에서 야생 포켓몬이 출현';
+    }
+  }
+  requestAnimationFrame(tick);
+}
+setPlayerPos(state.pos.x, state.pos.y);
+requestAnimationFrame(tick);
+
+/* 센터 */
+function healAllImmediate(){
+  state.party.forEach(m=>{ m.hp=m.maxHP; m.fainted=false; m.status=null; });
+  renderParty(); if (state.inBattle) syncBattleUI();
+  tipEl.textContent = '💖 포켓몬센터: 파티 전원 회복!';
+}
+document.getElementById('closeCenter').onclick = ()=> centerUI.style.display='none';
+document.getElementById('healAll').onclick = ()=>{
+  healAllImmediate(); centerUI.style.display='none';
+};
+
+/* =========================
+   5) 배틀/상태 + KO + (밴드: 퀘스트 보상) + 거다이맥스
+========================= */
+const battle = document.getElementById('battle');
+const logBox = document.getElementById('log');
+const pHP = document.getElementById('pHP');
+const wHP = document.getElementById('wHP');
+const pStatusSpan = document.getElementById('pStatus');
+const wStatusSpan = document.getElementById('wStatus');
+const act1 = document.getElementById('act1');
+const act2 = document.getElementById('act2');
+const act3 = document.getElementById('act3');
+const gmaxBtn = document.getElementById('gmaxBtn');
+
+/* === 거다이 기술 목록 === */
+const GMAX_MOVES = [
+  {label:'거다이감로', type:'grass'},   {label:'거다이옥염', type:'fire'},
+  {label:'거다이감쇠', type:'dragon'},  {label:'거다이융격', type:'steel'},
+  {label:'거다이감전', type:'electric'},{label:'거다이일격', type:'dark'},
+  {label:'거다이강철진', type:'steel'}, {label:'거다이연격', type:'water'},
+  {label:'거다이고혹', type:'bug'},     {label:'거다이재생', type:'normal'},
+  {label:'거다이금화', type:'normal'},   {label:'거다이저격', type:'water'},
+  {label:'거다이난타', type:'grass'},   {label:'거다이천도', type:'psychic'},
+  {label:'거다이단원', type:'fairy'},   {label:'거다이천벌', type:'fairy'},
+  {label:'거다이만뢰', type:'electric'},{label:'거다이편달', type:'grass'},
+  {label:'거다이백화', type:'fire'},    {label:'거다이포격', type:'water'},
+  {label:'거다이분석', type:'rock'},    {label:'거다이포말', type:'water'},
+  {label:'거다이사진', type:'ground'},  {label:'거다이포옹', type:'normal'},
+  {label:'거다이산격', type:'grass'},   {label:'거다이풍격', type:'flying'},
+  {label:'거다이선율', type:'ice'},     {label:'거다이화염구', type:'fire'},
+  {label:'거다이수마', type:'dark'},    {label:'거다이환영', type:'ghost'},
+  {label:'거다이악취', type:'poison'},  {label:'거다이회심격', type:'fighting'},
+  {label:'거다이암진', type:'water'},
+];
+
+/* 거다이 기술 3개 선택 */
+function pickGmaxMovesFor(mon){
+  const my = mon.type;
+  const pool = GMAX_MOVES.filter(m=>m.type===my);
+  const normals = GMAX_MOVES.filter(m=>m.type==='normal');
+  const picks = [];
+  while (pool.length && picks.length<3){
+    const i = Math.floor(Math.random()*pool.length);
+    const sel = pool.splice(i,1)[0];
+    picks.push({ ...sel, power:15, mtype: sel.type });
+  }
+  while (picks.length<3 && normals.length){
+    const i = Math.floor(Math.random()*normals.length);
+    const sel = normals.splice(i,1)[0];
+    picks.push({ ...sel, power:15, mtype: 'normal' });
+  }
+  while (picks.length<3){
+    const sel = GMAX_MOVES[Math.floor(Math.random()*GMAX_MOVES.length)];
+    picks.push({ ...sel, power:15, mtype: sel.type });
+  }
+  return picks;
+}
+
+function log(t){ logBox.innerHTML += `<div>• ${t}</div>`; logBox.scrollTop = logBox.scrollHeight; }
+function setStatusBadge(el, s){
+  if (!el) return;
+  if (!s){ el.style.display='none'; el.textContent=''; return; }
+  el.style.display='inline-block'; el.textContent = statusLabel(s);
+}
+function updateGmaxButton(){
+  const can = state.inBattle && state.hasDynaBand && !state.gmax.used && !state.gmax.active && !isFainted(state.party[state.activeIndex]);
+  gmaxBtn.style.display = can ? 'inline-block' : 'none';
+}
+function syncBattleUI(){
+  if (!state.inBattle) return;
+  const me = ensureMoves(state.party[state.activeIndex]);
+  const w = state.wild;
+  if (!me || !w){ return; }
+
+  const pNameEl = document.getElementById('pName');
+  const wNameEl = document.getElementById('wName');
+  if (pNameEl?.firstChild) pNameEl.firstChild.textContent = `${safe(me.name,'???')} Lv.${safe(me.level,'?')}${isFainted(me)?' (기절)':''} `;
+  if (wNameEl?.firstChild) wNameEl.firstChild.textContent = `야생의 ${safe(w.name,'???')} Lv.${safe(w.level,'?')} `;
+
+  const pw = hpPct(me); pHP.style.width = pw+"%"; pHP.className = hpClass(pw); setStatusBadge(pStatusSpan, me.status);
+  const ww = hpPct(w); wHP.style.width = ww+"%"; wHP.className = hpClass(ww); setStatusBadge(wStatusSpan, w.status);
+
+  if (state.gmax.active) {
+    act1.textContent = state.gmax.moves[0]?.label || '거다이 기술 1';
+    act2.textContent = state.gmax.moves[1]?.label || '거다이 기술 2';
+    act3.textContent = state.gmax.moves[2]?.label || '거다이 기술 3';
+  } else {
+    act1.textContent = me.moves[0].label;
+    act2.textContent = me.moves[1].label;
+    act3.textContent = me.moves[2].label;
+  }
+
+  document.getElementById('playerMon').classList.toggle('gmax', state.gmax.active);
+  drawMon(document.getElementById('playerMon'), me);
+  drawMon(document.getElementById('wildMon'), w);
+  updateGmaxButton();
+}
+function startEncounter(){
+  if (state.party.every(isFainted)) return;
+  state.inBattle = true;
+  state.koAwardedThisBattle = false;
+  state.gmax = { active:false, used:false, turns:3, targetIndex:null, moves:[] };
+
+  battle.style.display = 'block';
+  logBox.innerHTML = "";
+
+  const base = wildPool[Math.floor(Math.random()*wildPool.length)];
+  state.wild = { ...base, uid: newUID(), hp: base.maxHP, status:null };
+
+  if (isFainted(state.party[state.activeIndex])){
+    const alt = state.party.findIndex(m=>!isFainted(m));
+    if (alt>=0) state.activeIndex = alt;
+  }
+  syncBattleUI();
+  document.getElementById('catchBtn').disabled = true;
+  log(`야생의 ${state.wild.name}가 나타났다!`);
+}
+function endBattle(){
+  state.inBattle = false;
+  state.wild = null;
+  battle.style.display = 'none';
+  logBox.innerHTML = "";
+  document.getElementById('catchBtn').disabled = true;
+  document.getElementById('playerMon').classList.remove('gmax');
+}
+
+/* 거다이맥스 */
+function triggerGmax(){
+  const me = state.party[state.activeIndex];
+  if (!state.inBattle || !state.hasDynaBand || state.gmax.used || state.gmax.active || isFainted(me)) return;
+  state.gmax.active = true; state.gmax.used = true; state.gmax.turns = 3; state.gmax.targetIndex = state.activeIndex;
+  me._origMaxHP = me.maxHP;
+  me.maxHP = me.maxHP * 2;
+  me.hp = Math.min(me.maxHP, me.hp + me._origMaxHP);
+  state.gmax.moves = pickGmaxMovesFor(me);
+  syncBattleUI(); renderParty();
+  log('🔴 거다이맥스! 포켓몬이 거대해졌다!');
+}
+gmaxBtn.onclick = triggerGmax;
+
+function maybeTickGmaxTurnsAfterPlayer(){
+  if (state.gmax.active){
+    state.gmax.turns--;
+    if (state.gmax.turns<=0){
+      const me = state.party[state.gmax.targetIndex ?? state.activeIndex];
+      if (me && me._origMaxHP){
+        me.maxHP = me._origMaxHP; delete me._origMaxHP;
+        me.hp = Math.min(me.hp, me.maxHP);
+      }
+      state.gmax.active=false;
+      log('🔻 거다이맥스가 해제되었다.');
+      syncBattleUI(); renderParty();
+    } else {
+      syncBattleUI();
+    }
+  }
+}
+
+function setActions(on){
+  ['act1','act2','act3','runBtn','catchBtn','switchBtn'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (id==='catchBtn' && on) return;
+    el.disabled = !on;
+  });
+  updateGmaxButton();
+}
+
+/* STAB/상성 + 거다이맥스 보정 */
+function baseDamage(pwr){ return pwr + Math.floor(Math.random()*5); }
+function calcDamage(attacker, move, defender, isPlayerAttacker=false){
+  let raw = baseDamage(move.power || 0);
+  const stab = (move.mtype && move.mtype===attacker.type) ? STAB : 1;
+  const eff = typeEffect(move.mtype || 'normal', defender.type);
+  if (isPlayerAttacker && state.gmax.active) raw = Math.floor(raw * 1.8);
+  if (!isPlayerAttacker && state.gmax.active && state.gmax.targetIndex===state.activeIndex) raw = Math.floor(raw * 0.7);
+  return { dmg: Math.max(0, Math.floor(raw * stab * eff)), eff };
+}
+function effText(eff){
+  if (eff===0) return '하지만 통하지 않았다…';
+  if (eff>1) return '효과가 굉장했다!';
+  if (eff<1) return '효과가 별로인 듯하다…';
+  return '';
+}
+
+/* 상태 도우미 */
+function tryParalyze(target){
+  if (!target?.status){ target.status={type:'paralysis', turns:3}; return true; }
+  return false;
+}
+function tryPoison(target){
+  if (!target?.status){ target.status={type:'poison', next: Date.now()+5000}; return true; }
+  return false;
+}
+
+/* KO 보상 */
+function onWildFainted(){
+  if (state.koAwardedThisBattle) return;
+  state.koAwardedThisBattle = true;
+  const me = state.party[state.activeIndex];
+  if (me && !isFainted(me)){
+    levelUp(me, 1);
+    renderParty(); syncBattleUI();
+    log(`🏆 ${safe(me?.name,'포켓몬')}이(가) 상대를 쓰러뜨려 레벨이 올랐다! (+1)`);
+  }
+  document.getElementById('catchBtn').disabled = false;
+  setActions(true);
+}
+
+/* === 퀘스트: 포획 카운트/보상 === */
+function onQuestCatch(mon){
+  // 공통: 5/10 카운트 (완료 후엔 더 안 오름)
+  const q5 = state.quests.catch5, q10 = state.quests.catch10, qt = state.quests.type;
+
+  if (!q5.completed){
+    q5.progress++;
+    if (q5.progress >= q5.goal){
+      q5.completed = true;
+      state.hasDynaBand = true;
+      log('🎁 퀘스트 완료! 다이맥스 밴드를 획득했다!'); 
+    }
+  }
+  if (!q10.completed){
+    q10.progress++;
+    if (q10.progress >= q10.goal){
+      q10.completed = true;
+      // 파티 전원 희귀사탕 효과
+      state.party.forEach(p=>levelUp(p,1));
+      log('🎁 퀘스트 완료! 희귀사탕 효과로 파티 전원이 레벨 +1!');
+    }
+  }
+  // 특정 타입 퀘스트(반복 가능)
+  ensureTypeQuestTarget();
+  if (mon?.type === state.quests.type.target){
+    qt.progress++;
+    if (qt.progress >= qt.goal){
+      qt.cycles++;
+      qt.progress = 0;
+      // 보상: 현재 활성 포켓몬 레벨 +1
+      const me = state.party[state.activeIndex];
+      if (me) { levelUp(me,1); log(`🎁 타입 퀘스트 완료! ${me.name} 레벨 +1!`); }
+      // 다음 타깃 타입 갱신(이전과 다르게 시도)
+      let next = randomType(), guard=0;
+      while (next===qt.target && guard<10){ next = randomType(); guard++; }
+      qt.target = next;
+      log(`🎯 다음 타입 퀘스트 목표: ${TYPE_KO[qt.target]||qt.target}`);
+    }
+  }
+  renderParty(); // 밴드 표시/레벨 변화 반영
+  renderQuests();
+}
+
+act1.onclick = ()=> playerTurn(0);
+act2.onclick = ()=> playerTurn(1);
+act3.onclick = ()=> playerTurn(2);
+document.getElementById('runBtn').onclick = ()=>{ log('도망쳤다!'); setTimeout(endBattle,400); };
+document.getElementById('catchBtn').onclick = doCatch;
+document.getElementById('switchBtn').onclick = ()=> log('교체할 포켓몬을 좌측 파티에서 선택하세요.');
+
+function playerTurn(mi){
+  const me = ensureMoves(state.party[state.activeIndex]);
+  if (!me){ log('오류: 포켓몬 데이터를 불러올 수 없습니다.'); return; }
+  if (isFainted(me)){ log('기절해서 행동할 수 없습니다!'); return; }
+  setActions(false);
+
+  const mv = state.gmax.active ? state.gmax.moves[mi] : me.moves[mi];
+
+  if (!state.gmax.active && mv.effect==='heal'){
+    const amt = Math.ceil(me.maxHP * (mv.amount || 0.2));
+    const before = me.hp; me.hp = Math.min(me.maxHP, me.hp + amt);
+    syncBattleUI(); renderParty();
+    log(`${safe(me.name,'포켓몬')}이(가) ${mv.label}로 HP ${me.hp-before} 회복!`);
+    maybeTickGmaxTurnsAfterPlayer();
+    return wildTurnAfterDelay();
+  }
+
+  const { dmg, eff } = calcDamage(me, mv, state.wild, true);
+  if (eff===0){
+    log(`${safe(me.name,'포켓몬')}의 ${mv.label}! ${effText(eff)}`);
+  } else {
+    state.wild.hp = Math.max(0, state.wild.hp - dmg);
+    log(`${safe(me.name,'포켓몬')}의 ${mv.label}! ${dmg}의 대미지! ${effText(eff)}`);
+  }
+
+  // 전기: 마비
+  if (!state.gmax.active && mv.effect==='paralyze' && eff>0){
+    if (tryParalyze(state.wild)) log(`⚡ ${safe(state.wild?.name,'상대')}은(는) 마비에 걸렸다! (3턴)`);
+  }
+  // 독: 독 타입 기술이면 독 부여(거다이 기술 포함)
+  if (((state.gmax.active ? mv.type : mv.mtype)==='poison') && eff>0){
+    if (tryPoison(state.wild)) log(`☠️ ${safe(state.wild?.name,'상대')}은(는) 독에 걸렸다! (5초마다 -2)`);
+  }
+
+  syncBattleUI();
+  if (state.wild.hp<=0){
+    log(`야생의 ${safe(state.wild?.name,'포켓몬')}을(를) 쓰러뜨렸다!`);
+    onWildFainted();
+    maybeTickGmaxTurnsAfterPlayer();
+    return;
+  }
+  maybeTickGmaxTurnsAfterPlayer();
+  wildTurnAfterDelay();
+}
+
+function wildTurnAfterDelay(){
+  setTimeout(()=>{
+    const me = ensureMoves(state.party[state.activeIndex]);
+    const w = state.wild;
+    if (!w || !me){ setActions(true); return; }
+
+    if (w.status && w.status.type==='paralysis' && w.status.turns>0){
+      if (Math.random()<0.5){
+        log(`야생의 ${safe(w.name,'상대')}은(는) 몸이 저려서 움직일 수 없다!`);
+        w.status.turns--;
+        if (w.status.turns<=0){ log(`야생의 ${safe(w.name,'상대')}의 마비가 풀렸다.`); w.status=null; }
+        syncBattleUI(); setActions(true); return;
+      } else {
+        w.status.turns--;
+        if (w.status.turns<=0){ log(`야생의 ${safe(w.name,'상대')}의 마비가 풀렸다.`); w.status=null; }
+      }
+    }
+
+    const mv = w.moves[Math.random()<0.6?0:1];
+    const { dmg, eff } = calcDamage(w, mv, me, false);
+
+    if (eff===0){
+      log(`야생의 ${safe(w.name,'상대')}의 ${mv.label}! ${effText(eff)}`);
+    } else {
+      me.hp = Math.max(0, me.hp - dmg);
+      log(`야생의 ${safe(w.name,'상대')}의 ${mv.label}! ${dmg}의 대미지! ${effText(eff)}`);
+    }
+
+    if (mv.mtype==='poison' && eff>0){
+      if (tryPoison(me)) log(`☠️ ${safe(me.name,'내 포켓몬')}이(가) 독에 걸렸다! (5초마다 -2)`);
+    }
+
+    if (me.hp<=0){
+      log(`${safe(me.name,'내 포켓몬')}이(가) 기절했다!`);
+      const idx = state.party.findIndex(p=>!isFainted(p));
+      if (idx === -1){ log('전투 불능! 전투 종료.'); setTimeout(endBattle, 700); return; }
+      state.activeIndex = idx; renderParty(); log(`자동 교체 → ${state.party[idx].name}`);
+    }
+    syncBattleUI(); renderParty();
+    setActions(true);
+  }, 450);
+}
+
+/* 독 DOT */
+setInterval(()=>{
+  if (!state.inBattle) return;
+  const now = Date.now();
+  const me = state.party[state.activeIndex];
+  if (me && me.status && me.status.type==='poison' && me.hp>0 && now >= (me.status.next||0)){
+    me.hp = Math.max(0, me.hp - 2);
+    me.status.next = now + 5000;
+    renderParty(); syncBattleUI();
+    log(`☠️ ${safe(me.name,'포켓몬')}은(는) 독의 대미지를 받았다! (-2)`);
+    if (me.hp<=0){
+      log(`${safe(me.name,'포켓몬')}이(가) 독으로 쓰러졌다!`);
+      const idx = state.party.findIndex(p=>!isFainted(p));
+      if (idx === -1){ log('전투 불능! 전투 종료.'); setTimeout(endBattle, 700); return; }
+      state.activeIndex = idx; renderParty(); syncBattleUI();
+      log(`자동 교체 → ${state.party[idx].name}`);
+    }
+  }
+  const w = state.wild;
+  if (w && w.status && w.status.type==='poison' && w.hp>0 && now >= (w.status.next||0)){
+    w.hp = Math.max(0, w.hp - 2);
+    w.status.next = now + 5000;
+    syncBattleUI();
+    log(`☠️ 야생의 ${safe(w.name,'상대')}은(는) 독의 대미지를 받았다! (-2)`);
+    if (w.hp<=0){
+      log(`야생의 ${safe(w.name,'상대')}이(가) 독으로 쓰러졌다!`);
+      onWildFainted();
+    }
+  }
+}, 250);
+
+/* 포획 (HP 0 조건) */
+function doCatch(){
+  if (!(state.wild && state.wild.hp<=0)) return;
+
+  const w = state.wild;
+  const already = !!state.pokedex[w.sid];
+
+  if (!already){
+    registerPokedex(w);
+    if (partyCount()<5){
+      state.party.push({
+        uid: newUID(),
+        sid:w.sid, name:w.name, type:w.type, level:w.level,
+        maxHP:w.maxHP, hp:w.maxHP, status:null, fainted:false, moves: w.moves
+      });
+      renderParty();
+      log(`🎉 ${w.name}을(를) 포획했다! (도감 등록 + 파티 합류)`);
+    } else {
+      log(`🎒 가방이 가득합니다. ${w.name}은(는) 도감에만 등록되었습니다. (도감에서 교체해 넣을 수 있어요)`);
+    }
+  } else {
+    const idx = state.party.findIndex(p=>p.sid===w.sid);
+    if (idx>=0){
+      levelUp(state.party[idx], 1);
+      renderParty();
+      log(`⭐ ${w.name} 중복 포획: 파티의 같은 종 레벨 +1!`);
+    } else {
+      state.pokedex[w.sid].level = Math.max(state.pokedex[w.sid].level, w.level+1);
+      log(`⭐ ${w.name} 중복 포획: 도감 최고 레벨 갱신(파티 미추가).`);
+    }
+  }
+
+  // 🔔 퀘스트 카운트/보상 처리
+  onQuestCatch(w);
+
+  setTimeout(endBattle, 600);
+}
+
+/* =========================
+   6) 스프라이트 — 개체(uid)마다 전부 다르게
+========================= */
+function mulberry32(a){return function(){var t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;}}
+function hashSid(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);} return h>>>0;}
+const TYPE_COLORS = {
+  electric:[246,214,74], fire:[255,146,72], water:[93,183,255], grass:[47,191,113], rock:[154,161,166],
+  flying:[147,176,255], poison:[167,139,250], ice:[139,210,255], psychic:[226,163,255], ground:[193,154,107],
+  normal:[205,205,205], fighting:[210,90,70], bug:[170,195,75], ghost:[110,90,150], dragon:[100,120,220],
+  dark:[90,80,70], steel:[170,170,190], fairy:[240,180,240]
+};
+
+function drawMon(canvas, mon){
+  const ctx=canvas.getContext('2d'); const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  if (!mon){ return; }
+
+  ctx.fillStyle='rgba(0,0,0,0.2)';
+  ctx.beginPath(); ctx.ellipse(W/2, H-30, 80, 18, 0, 0, Math.PI*2); ctx.fill();
+
+  const rng = mulberry32(hashSid(mon.uid || mon.sid || mon.name || 'x'));
+  const base = TYPE_COLORS[mon.type] || [200,200,200];
+  const d = Math.floor(rng()*40)-20;
+  const bodyColor = `rgb(${Math.max(0,Math.min(255,base[0]+d))},${Math.max(0,Math.min(255,base[1]+d))},${Math.max(0,Math.min(255,base[2]+d))})`;
+  const accent = `rgba(${Math.max(0,Math.min(255,base[0]-d))},${Math.max(0,Math.min(255,base[1]-d))},${Math.max(0,Math.min(255,base[2]-d))},0.9)`;
+
+  const cx=W/2, cy=120;
+  const form = Math.floor(rng()*6);
+  ctx.fillStyle = bodyColor;
+  switch(form){
+    case 0: ctx.beginPath(); ctx.ellipse(cx,cy,60,45, rng()*1.2, 0, Math.PI*2); ctx.fill(); break;
+    case 1: roundedRect(ctx,cx-60,cy-40,120,80, 24); ctx.fill(); break;
+    case 2: poly(ctx, [[cx-50,cy+50],[cx,cy-55],[cx+50,cy+50]]); ctx.fill(); break;
+    case 3: ctx.beginPath(); ctx.moveTo(cx-50,cy); ctx.bezierCurveTo(cx-40,cy-60,cx+40,cy-60,cx+50,cy); ctx.bezierCurveTo(cx+45,cy+60,cx-45,cy+60,cx-50,cy); ctx.closePath(); ctx.fill(); break;
+    case 4: blob(ctx,cx,cy, rng); ctx.fill(); break;
+    case 5: ctx.beginPath(); ctx.ellipse(cx,cy,50,60,0,0,Math.PI*2); ctx.fill(); break;
+  }
+
+  const stripeCount = 2 + Math.floor(rng()*4);
+  ctx.fillStyle = accent;
+  for(let i=0;i<stripeCount;i++){
+    const a = (i - stripeCount/2) * 0.3 + (rng()*0.2);
+    const rx = 20 + rng()*30, ry = 8 + rng()*18;
+    ctx.beginPath(); ctx.ellipse(cx + Math.cos(a)*20, cy + Math.sin(a)*10, rx, ry, a, 0, Math.PI*2); ctx.globalAlpha=0.12; ctx.fill(); ctx.globalAlpha=1;
+  }
+
+  ctx.fillStyle = '#222';
+  const eyeDx = 18 + rng()*14, eyeDy = -8 + rng()*6, eyeR = 4 + rng()*3;
+  ctx.beginPath(); ctx.arc(cx-eyeDx, cy+eyeDy, eyeR, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+eyeDx, cy+eyeDy, eyeR, 0, Math.PI*2); ctx.fill();
+
+  const deco = Math.floor(rng()*3);
+  ctx.fillStyle = accent;
+  if (deco===0){ horn(ctx,cx-25,cy-50, rng); horn(ctx,cx+25,cy-50, rng); }
+  else if (deco===1){ wing(ctx,cx-60,cy, -1, rng); wing(ctx,cx+60,cy, 1, rng); }
+  else { fin(ctx,cx-35,cy+20, -1, rng); fin(ctx,cx+35,cy+20, 1, rng); }
+}
+function roundedRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function poly(ctx, pts){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();}
+function blob(ctx,cx,cy,rng){ctx.beginPath();const n=6+Math.floor(rng()*4);for(let i=0;i<n;i++){const ang=i/n*Math.PI*2;const rad=40+rng()*18;const x=cx+Math.cos(ang)*rad,y=cy+Math.sin(ang)*(rad*0.8);if(i===0)ctx.moveTo(x,y);else ctx.quadraticCurveTo(cx,cy,x,y);}ctx.closePath();}
+function horn(ctx,x,y,rng){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+10,y-25);ctx.lineTo(x+20,y);ctx.closePath();ctx.fill();}
+function wing(ctx,x,y,dir,rng){ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+dir*40,y-20,x+dir*80,y);ctx.quadraticCurveTo(x+dir*50,y+20,x,y);ctx.closePath();ctx.fillStyle='rgba(255,255,255,0.35)';ctx.fill();ctx.fillStyle='rgba(0,0,0,0.1)';ctx.stroke();}
+function fin(ctx,x,y,dir,rng){ctx.beginPath();ctx.ellipse(x,y,20,10,dir*0.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fill();}
+
+/* =========================
+   7) 초기 렌더 + 테스트
+========================= */
+renderParty();
+registerPokedex(state.party[0]);
+renderQuests();
+
+// 테스트 (18타입/90종/퀘스트)
+(function tests(){
+  console.assert(TYPES.length===18, '타입 개수(18) 오류');
+  console.assert(DEX.length===90, '도감 90종 생성 실패');
+  console.assert(state.party[0].moves.length===3, '스타터 기술 미할당');
+
+  // 상성 핵심 검증
+  console.assert(typeEffect('water','fire')===2, '물→불 2배 실패');
+  console.assert(typeEffect('electric','ground')===0, '전기→땅 0배 실패');
+  console.assert(typeEffect('ground','flying')===0, '땅→비행 0배 실패');
+  console.assert(typeEffect('grass','fire')===0.5, '풀→불 0.5배 실패');
+  console.assert(typeEffect('normal','ghost')===0, '노말→고스트 0배 실패');
+  console.assert(typeEffect('fighting','rock')===2, '격투→바위 2배 실패');
+  console.assert(typeEffect('steel','ice')===2, '강철→얼음 2배 실패');
+  console.assert(typeEffect('fairy','dragon')===2, '페어리→드래곤 2배 실패');
+  console.assert(typeEffect('dragon','fairy')===0, '드래곤→페어리 0배 실패');
+
+  // 거다이 목록/선택
+  console.assert(GMAX_MOVES.length===33, '거다이 기술 개수가 33이 아님');
+  const sel = pickGmaxMovesFor({type:'water'});
+  console.assert(sel.length===3 && sel.every(m=>m.mtype==='water' || m.mtype==='normal'), '거다이 선택 로직 오류(물)');
+})();
+
+// 추가 테스트: 퀘스트
+(function questTests(){
+  // 5마리 잡기 → 밴드 지급
+  state.hasDynaBand=false;
+  state.quests.catch5.progress=0; state.quests.catch5.completed=false;
+  for(let i=0;i<5;i++){
+    state.wild = { sid:DEX[10+i].sid, name:DEX[10+i].name, type:DEX[10+i].type, level:3, maxHP:30, hp:0, moves: TYPE_MOVESETS[DEX[10+i].type] };
+    doCatch();
+  }
+  console.assert(state.hasDynaBand===true && state.quests.catch5.completed===true, '퀘스트5 밴드 지급 실패');
+
+  // 10마리 잡기 → 파티 전원 레벨 +1
+  const before = state.party.map(p=>p.level);
+  state.quests.catch10.progress=9; state.quests.catch10.completed=false;
+  state.wild = { sid:DEX[40].sid, name:DEX[40].name, type:DEX[40].type, level:3, maxHP:30, hp:0, moves: TYPE_MOVESETS[DEX[40].type] };
+  doCatch();
+  const after = state.party.map(p=>p.level);
+  console.assert(after.every((lv,i)=>lv>=before[i]+1), '퀘스트10 파티 레벨업 실패');
+
+  // 특정 타입(물) 1회 완성 시 사이클 증가(테스트 편의상 goal을 임시로 1회 시뮬레이션)
+  state.quests.type.target='water'; state.quests.type.progress=2; state.quests.type.goal=3;
+  const prevCycles = state.quests.type.cycles;
+  state.wild = { sid:DEX.find(d=>d.type==='water').sid, name:'테스트물', type:'water', level:3, maxHP:30, hp:0, moves: TYPE_MOVESETS['water'] };
+  doCatch();
+  console.assert(state.quests.type.cycles===prevCycles+1, '타입 퀘스트 사이클 증가 실패');
+})();
+</script>
+</body>
+</html>
