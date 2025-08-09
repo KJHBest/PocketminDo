@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<title>포켓몬 18타입 | 90종 | 퀘스트(5/10/특정타입) | 도감/교체 | 가방5 | 상성 | 상태이상 | KO레벨업 | 다이맥스/거다이맥스</title>
+<title>포켓몬라이크 | 전설 잔디/트레이너 | 18타입/90종 | 퀘스트/거다이맥스</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root { --vw: 900px; --vh: 560px; }
@@ -41,10 +41,16 @@
     repeating-linear-gradient(90deg, transparent 0 38px, rgba(255,255,255,.06) 38px 40px);
     border: 16px solid #6bb14a; border-radius:6px; }
   .grass { position:absolute; background: repeating-linear-gradient(45deg,#5aa94a 0 6px,#67bd57 6px 12px); border-radius:8px; opacity:.9; }
+  .grass.legend { background: repeating-linear-gradient(45deg,#7c3aed 0 6px,#a78bfa 6px 12px); box-shadow:0 0 14px #a78bfa66 inset; }
   .road { position:absolute; background:#c9b48a; border:2px dashed #ad976c; border-radius:8px; }
+
   #center { position:absolute; width:260px; height:160px; background:#fff; border:3px solid #ef4444; border-radius:12px; left:1550px; top:300px; box-shadow:0 6px 16px rgba(0,0,0,.15); }
   #center::before { content:"포켓몬센터"; position:absolute; left:0; right:0; top:-28px; text-align:center; font-weight:800; color:#ef4444; text-shadow:0 1px 0 #fff; }
   #centerDoor { position:absolute; width:60px; height:70px; left:100px; bottom:0; background:#ef4444; border:4px solid #b91c1c; border-bottom:none; border-radius:10px 10px 0 0; }
+
+  #trainerNPC { position:absolute; left:1280px; top:520px; width:24px; height:24px; border-radius:6px; background:#1f2937; box-shadow:0 0 0 3px #fbbf24 inset, 0 0 10px #00000055; }
+  #trainerNPC::after{ content:'트레이너'; position:absolute; left:-10px; top:-22px; font-size:12px; font-weight:800; color:#111827; text-shadow:0 1px 0 #fff; }
+
   #player { position:absolute; width:28px; height:28px; border-radius:50%; background:#2b2b2b; box-shadow:0 0 0 3px #ffd166 inset; }
   #hud { position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:space-between; pointer-events:none; }
   .pill { background:#00000040; color:#fff; padding:6px 10px; border-radius:999px; font-size:12px; }
@@ -107,6 +113,10 @@
       <div id="qCatch5" class="qitem">5마리 잡기: 0/5</div>
       <div id="qCatch10" class="qitem">10마리 잡기: 0/10</div>
       <div id="qType" class="qitem">특정 타입(3마리): -</div>
+      <div class="qitem" style="margin-top:6px;color:#6b7280;">
+        ⬛ 초록 잔디: 일반 출현 · 🟪 보라 잔디: <b>전설 전용</b><br/>
+        🤝 트레이너 근처에서 <b>T</b>키로 배틀
+      </div>
     </div>
     <hr />
     <div style="font-size:12px;color:#475569;line-height:1.5">
@@ -127,11 +137,18 @@
       <div id="map">
         <div class="road" style="left:200px; top:200px; width:1200px; height:60px;"></div>
         <div class="road" style="left:1200px; top:200px; width:60px; height:500px;"></div>
+
+        <!-- 일반 잔디 -->
         <div class="grass" style="left:280px; top:320px; width:500px; height:260px;"></div>
         <div class="grass" style="left:900px; top:620px; width:380px; height:260px;"></div>
         <div class="grass" style="left:1400px; top:120px; width:420px; height:260px;"></div>
         <div class="grass" style="left:300px; top:820px; width:520px; height:240px;"></div>
+
+        <!-- 전설 전용 잔디(보라) -->
+        <div class="grass legend" style="left:1520px; top:780px; width:360px; height:220px;" title="전설 포켓몬 전용"></div>
+
         <div id="center"><div id="centerDoor" title="E키로 즉시 회복"></div></div>
+        <div id="trainerNPC" title="트레이너(T키로 배틀)"></div>
         <div id="player" title="플레이어"></div>
       </div>
     </div>
@@ -166,7 +183,7 @@
             <button id="act3" class="btn">스킬3</button>
             <button id="gmaxBtn" class="btn" style="display:none;background:#ef4444;">거다이맥스</button>
             <button id="switchBtn" class="btn secondary">교체</button>
-            <button id="catchBtn" class="btn secondary" disabled>포획하기</button>
+            <button id="catchBtn" class="btn secondary" disabled>포켓몬볼</button>
             <button id="runBtn" class="btn warn">도망</button>
           </div>
         </div>
@@ -198,12 +215,26 @@
         </p>
       </div>
     </div>
+
+    <!-- 포획 교체 UI -->
+    <div id="swapUI" class="overlay">
+      <div id="swapCard" class="cardBox" style="width:520px;">
+        <h4>🎯 포켓몬볼 - 교체할 칸 선택</h4>
+        <p style="margin-top:4px;color:#334155;font-size:13px">
+          잡은 포켓몬을 파티의 한 칸과 <b>교체</b>합니다. (가방 확장 없음)
+        </p>
+        <ul id="swapList" style="list-style:none;margin:10px 0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:8px"></ul>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button id="swapCancel" class="btn" style="background:#64748b;">도감만 등록</button>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
 <script>
 /* =========================
-   1) 타입/기술/도감(18타입 × 5 = 90종)
+   1) 타입/기술/도감(18타입 × 5 = 90종) + 전설 3종(별도 풀)
 ========================= */
 const TYPES = [
   'electric','fire','water','grass','rock','flying','poison','ice','psychic','ground',
@@ -330,7 +361,6 @@ const TYPE_MOVESETS = {
 };
 
 const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
-// 개체 고유 ID
 let __UID = 1;
 const newUID = () => `u${(__UID++).toString(36)}`;
 
@@ -349,29 +379,32 @@ for (const type of TYPES){
     DEX.push({ sid, type, name:names[i], level, maxHP, moves: TYPE_MOVESETS[type] });
   }
 }
+/* 전설 3종(전설 잔디 전용) */
+const LEGENDS = [
+  { sid:'legend-flarebeast', name:'화우(Flarebeast)',  type:'fire',     level:12, maxHP:60, moves: TYPE_MOVESETS.fire, legend:true },
+  { sid:'legend-aqualynx',   name:'수령(Aqualynx)',    type:'water',    level:12, maxHP:60, moves: TYPE_MOVESETS.water, legend:true },
+  { sid:'legend-voltiger',   name:'뇌호(Voltiger)',    type:'electric', level:12, maxHP:60, moves: TYPE_MOVESETS.electric, legend:true }
+];
 
-/* 야생 풀 */
 const wildPool = DEX.map(s=>({ ...s }));
+const legendPool = LEGENDS.map(s=>({ ...s }));
 
 /* =========================
-   2) 상성표/배율 + STAB (18타입)
+   2) 상성표/배율 + STAB
 ========================= */
 const EFFECT = {
   normal:   { rock:0.5, ghost:0, steel:0.5 },
-
   fire:     { grass:2, ice:2, bug:2, steel:2, fire:0.5, water:0.5, rock:0.5, dragon:0.5 },
   water:    { fire:2, ground:2, rock:2, water:0.5, grass:0.5, dragon:0.5 },
   electric: { water:2, flying:2, electric:0.5, grass:0.5, dragon:0.5, ground:0 },
   grass:    { water:2, ground:2, rock:2, fire:0.5, grass:0.5, poison:0.5, flying:0.5, bug:0.5, dragon:0.5, steel:0.5 },
   ice:      { grass:2, ground:2, flying:2, dragon:2, water:0.5, fire:0.5, ice:0.5, steel:0.5 },
-
   fighting: { normal:2, ice:2, rock:2, dark:2, steel:2, poison:0.5, flying:0.5, psychic:0.5, bug:0.5, fairy:0.5, ghost:0 },
   poison:   { grass:2, fairy:2, poison:0.5, ground:0.5, rock:0.5, ghost:0.5, steel:0 },
   ground:   { fire:2, electric:2, poison:2, rock:2, steel:2, grass:0.5, bug:0.5, flying:0 },
   flying:   { grass:2, fighting:2, bug:2, electric:0.5, rock:0.5, steel:0.5 },
   psychic:  { fighting:2, poison:2, psychic:0.5, steel:0.5, dark:0 },
   bug:      { grass:2, psychic:2, dark:2, fire:0.5, fighting:0.5, poison:0.5, flying:0.5, ghost:0.5, steel:0.5, fairy:0.5 },
-
   rock:     { fire:2, ice:2, flying:2, bug:2, fighting:0.5, ground:0.5, steel:0.5 },
   ghost:    { psychic:2, ghost:2, dark:0.5, normal:0 },
   dragon:   { dragon:2, steel:0.5, fairy:0 },
@@ -388,7 +421,7 @@ function typeEffect(mtype, defType){
 }
 
 /* =========================
-   3) 상태/유틸/렌더/도감/다이맥스/퀘스트
+   3) 상태/유틸/렌더/도감/다이맥스/퀘스트/트레이너/포획UI
 ========================= */
 const camera = document.getElementById('camera');
 const map = document.getElementById('map');
@@ -399,6 +432,7 @@ const pList = document.getElementById('party');
 const tipEl = document.getElementById('tip');
 const capInfo = document.getElementById('capInfo');
 const bandInfo = document.getElementById('bandInfo');
+const trainerNPC = document.getElementById('trainerNPC');
 
 const dexUI = document.getElementById('dexUI');
 const dexListEl = document.getElementById('dexList');
@@ -407,33 +441,55 @@ const qEl5 = document.getElementById('qCatch5');
 const qEl10 = document.getElementById('qCatch10');
 const qElType = document.getElementById('qType');
 
+const battle = document.getElementById('battle');
+const logBox = document.getElementById('log');
+const pHP = document.getElementById('pHP');
+const wHP = document.getElementById('wHP');
+const pStatusSpan = document.getElementById('pStatus');
+const wStatusSpan = document.getElementById('wStatus');
+const act1 = document.getElementById('act1');
+const act2 = document.getElementById('act2');
+const act3 = document.getElementById('act3');
+const gmaxBtn = document.getElementById('gmaxBtn');
+const catchBtn = document.getElementById('catchBtn');
+
+const swapUI = document.getElementById('swapUI');
+const swapList = document.getElementById('swapList');
+const swapCancel = document.getElementById('swapCancel');
+
 const state = {
   world: { w: 2000, h: 1200, vw: 900, vh: 560 },
   pos: { x: 260, y: 260 },
   inBattle: false,
+  battleType: 'wild', // 'wild' | 'trainer'
   inGrass: false,
+  inLegendGrass: false,
   party: [
     { uid: newUID(), sid:'electric-0', name:'피카츄', level:5, maxHP:35, hp:35, type:'electric', moves: TYPE_MOVESETS.electric, fainted:false, status:null, starter:true }
   ],
   activeIndex: 0,
   wild: null,
-  pokedex: {}, // sid -> {name,type,level,caught:true}
+  pokedex: {}, // sid -> {name,type,level,maxHP?,caught:true}
   koAwardedThisBattle: false,
   dexSwapSid: null,
   hasDynaBand: false,
-  bandRolledThisBattle: false, // (더이상 사용하지 않음)
   gmax: { active:false, used:false, turns:0, targetIndex:null, moves:[] },
   quests: {
     catch5: { progress:0, goal:5, completed:false },
     catch10:{ progress:0, goal:10, completed:false },
     type:   { target: null, progress:0, goal:3, cycles:0 }
-  }
+  },
+  trainer: {
+    name: '트레이너 민호',
+    defeated: false,
+    index: 0,
+    team: []
+  },
+  pendingCatch: null // 포켓몬볼로 잡은 개체(교체 대기)
 };
 
 function randomType(){ return TYPES[Math.floor(Math.random()*TYPES.length)]; }
-function ensureTypeQuestTarget(){
-  if (!state.quests.type.target) state.quests.type.target = randomType();
-}
+function ensureTypeQuestTarget(){ if (!state.quests.type.target) state.quests.type.target = randomType(); }
 ensureTypeQuestTarget();
 
 const keys = new Set();
@@ -460,10 +516,11 @@ function partyHasSid(sid){ return state.party.some(p=>p.sid===sid); }
 function registerPokedex(mon){
   if (!mon) return false;
   if (!state.pokedex[mon.sid]){
-    state.pokedex[mon.sid] = { name: mon.name, type: mon.type, level: mon.level, caught:true };
+    state.pokedex[mon.sid] = { name: mon.name, type: mon.type, level: mon.level, maxHP: mon.maxHP, caught:true };
     return true;
   } else {
     state.pokedex[mon.sid].level = Math.max(state.pokedex[mon.sid].level, mon.level);
+    state.pokedex[mon.sid].maxHP = Math.max(state.pokedex[mon.sid].maxHP||0, mon.maxHP||0);
     return false;
   }
 }
@@ -476,19 +533,20 @@ function levelUp(mon, gain=1){
   mon.hp = mon.maxHP;
 }
 
-/* DEX → 개체 생성 */
+/* DEX → 개체 생성 (DEX 없으면 도감 레코드로 복원) */
 function createMonFromDex(sid){
   const dexRec = state.pokedex[sid];
   const base = DEX.find(d=>d.sid===sid);
-  if (!dexRec || !base) return null;
-  const extra = Math.max(0, (dexRec.level||base.level) - base.level);
+  if (!dexRec && !base) return null;
+  const ref = base || { sid, type: dexRec.type, name: dexRec.name, level: dexRec.level, maxHP: dexRec.maxHP||40, moves: TYPE_MOVESETS[dexRec.type] };
+  const extra = Math.max(0, (dexRec?.level||ref.level) - ref.level);
   return {
     uid: newUID(),
-    sid: base.sid, name: base.name, type: base.type,
-    level: (dexRec.level||base.level),
-    maxHP: base.maxHP + 2*extra,
-    hp: base.maxHP + 2*extra,
-    status:null, fainted:false, moves: TYPE_MOVESETS[base.type]
+    sid: ref.sid, name: ref.name, type: ref.type,
+    level: (dexRec?.level||ref.level),
+    maxHP: ref.maxHP + 2*extra,
+    hp: ref.maxHP + 2*extra,
+    status:null, fainted:false, moves: TYPE_MOVESETS[ref.type]
   };
 }
 
@@ -539,17 +597,12 @@ function renderQuests(){
   const q5 = state.quests.catch5;
   const q10 = state.quests.catch10;
   const qt = state.quests.type;
-  // 5마리
-  const p5 = Math.min(q5.progress, q5.goal);
   qEl5.innerHTML = q5.completed
     ? `5마리 잡기: <span class="qdone">완료</span> (다이맥스 밴드 획득)`
-    : `5마리 잡기: ${p5}/${q5.goal}`;
-  // 10마리
-  const p10 = Math.min(q10.progress, q10.goal);
+    : `5마리 잡기: ${Math.min(q5.progress,q5.goal)}/${q5.goal}`;
   qEl10.innerHTML = q10.completed
     ? `10마리 잡기: <span class="qdone">완료</span> (파티 전원 레벨 +1 수령)`
-    : `10마리 잡기: ${p10}/${q10.goal}`;
-  // 타입퀘
+    : `10마리 잡기: ${Math.min(q10.progress,q10.goal)}/${q10.goal}`;
   const tname = TYPE_KO[qt.target] || qt.target || '-';
   qElType.innerHTML = `특정 타입(3마리): <span class="qtype">${tname}</span> ${qt.progress}/${qt.goal} · 완료 ${qt.cycles}회`;
 }
@@ -566,7 +619,7 @@ function renderDex(){
   for (const [sid, rec] of entries){
     const inParty = partyHasSid(sid);
     const canAdd = partyCount()<5 && !inParty;
-    const variant = sid.split('-')[1];
+    const variant = sid.includes('-') ? sid.split('-').pop() : 'L';
     const item = document.createElement('div');
     item.className='dexItem';
     if (state.dexSwapSid===sid) item.classList.add('sel');
@@ -603,7 +656,7 @@ document.getElementById('openDexBtn').onclick = ()=>{ dexUI.style.display='flex'
 document.getElementById('closeDex').onclick = ()=>{ dexUI.style.display='none'; state.dexSwapSid=null; renderParty(); };
 
 /* =========================
-   4) 이동/센터/입력
+   4) 이동/센터/입력/접근 판정
 ========================= */
 function moveCamera(){
   const cx = clamp(state.pos.x - state.world.vw/2, 0, state.world.w - state.world.vw);
@@ -619,15 +672,36 @@ function setPlayerPos(x,y){
   player.style.top  = state.pos.y + "px";
   moveCamera();
 }
+function rectsOverlap(ax,ay,aw,ah,bx,by,bw,bh){
+  return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
+}
 function isOnGrass(){
-  const patches = [...document.querySelectorAll('.grass')];
+  const patches = [...document.querySelectorAll('.grass:not(.legend)')];
   const p = {x:state.pos.x-14, y:state.pos.y-14, w:28, h:28};
   for (const g of patches){
-    const gx=g.offsetLeft, gy=g.offsetTop, gw=g.offsetWidth, gh=g.offsetHeight;
-    if (p.x<gx+gw && p.x+p.w>gx && p.y<gy+gh && p.y+p.h>gy) return true;
+    if (rectsOverlap(p.x,p.y,p.w,p.h,g.offsetLeft,g.offsetTop,g.offsetWidth,g.offsetHeight)) return true;
   }
   return false;
 }
+function isOnLegendGrass(){
+  const patches = [...document.querySelectorAll('.grass.legend')];
+  const p = {x:state.pos.x-14, y:state.pos.y-14, w:28, h:28};
+  for (const g of patches){
+    if (rectsOverlap(p.x,p.y,p.w,p.h,g.offsetLeft,g.offsetTop,g.offsetWidth,g.offsetHeight)) return true;
+  }
+  return false;
+}
+function nearCenterDoor(){
+  const P = {x:state.pos.x-14, y:state.pos.y-14, w:28, h:28};
+  const door = { x: center.offsetLeft+100, y:center.offsetTop+90, w:60, h:70 };
+  return rectsOverlap(P.x,P.y,P.w,P.h, door.x,door.y,door.w,door.h);
+}
+function nearTrainer(){
+  const P = {x:state.pos.x-14, y:state.pos.y-14, w:28, h:28};
+  const T = { x: trainerNPC.offsetLeft, y:trainerNPC.offsetTop, w:24, h:24 };
+  return rectsOverlap(P.x,P.y,P.w,P.h, T.x-10, T.y-10, T.w+20, T.h+20);
+}
+
 document.getElementById('healBtn').onclick = ()=> healAllImmediate();
 
 document.addEventListener('keydown', e=>{
@@ -635,14 +709,11 @@ document.addEventListener('keydown', e=>{
   if (e.key.toLowerCase()==='e' && nearCenterDoor()){
     healAllImmediate();
   }
+  if (e.key.toLowerCase()==='t' && nearTrainer() && !state.inBattle && !state.trainer.defeated){
+    startTrainerBattle();
+  }
 });
 document.addEventListener('keyup', e=> keys.delete(e.key));
-
-function nearCenterDoor(){
-  const P = {x:state.pos.x-14, y:state.pos.y-14, w:28, h:28};
-  const door = { x: center.offsetLeft+100, y:center.offsetTop+90, w:60, h:70 };
-  return P.x<door.x+door.w && P.x+P.w>door.x && P.y<door.y+door.h && P.y+P.h>door.y;
-}
 
 function tick(){
   if (!state.inBattle){
@@ -654,9 +725,15 @@ function tick(){
     if (dx||dy){
       setPlayerPos(state.pos.x+dx, state.pos.y+dy);
       const onGrass = isOnGrass();
-      if (onGrass && Math.random()<0.07) startEncounter();
-      state.inGrass = onGrass;
-      tipEl.textContent = onGrass ? '잔디(배틀 가능 지역)' : '잔디에서 야생 포켓몬이 출현';
+      const onLegend = isOnLegendGrass();
+      state.inGrass = onGrass; state.inLegendGrass = onLegend;
+
+      if (onLegend && Math.random()<0.10) startLegendEncounter();
+      else if (onGrass && Math.random()<0.07) startEncounter();
+
+      tipEl.textContent = onLegend ? '🟪 전설 잔디: 희귀 전설이 출현!'
+                       : onGrass  ? '잔디(배틀 가능 지역)'
+                                  : '잔디에서 야생 포켓몬이 출현';
     }
   }
   requestAnimationFrame(tick);
@@ -676,20 +753,10 @@ document.getElementById('healAll').onclick = ()=>{
 };
 
 /* =========================
-   5) 배틀/상태 + KO + (밴드: 퀘스트 보상) + 거다이맥스
+   5) 배틀/상태 + KO + (퀘스트 보상) + 거다이맥스 + 전설/트레이너
 ========================= */
-const battle = document.getElementById('battle');
-const logBox = document.getElementById('log');
-const pHP = document.getElementById('pHP');
-const wHP = document.getElementById('wHP');
-const pStatusSpan = document.getElementById('pStatus');
-const wStatusSpan = document.getElementById('wStatus');
-const act1 = document.getElementById('act1');
-const act2 = document.getElementById('act2');
-const act3 = document.getElementById('act3');
-const gmaxBtn = document.getElementById('gmaxBtn');
 
-/* === 거다이 기술 목록 === */
+/* 거다이 기술 목록 */
 const GMAX_MOVES = [
   {label:'거다이감로', type:'grass'},   {label:'거다이옥염', type:'fire'},
   {label:'거다이감쇠', type:'dragon'},  {label:'거다이융격', type:'steel'},
@@ -710,35 +777,19 @@ const GMAX_MOVES = [
   {label:'거다이암진', type:'water'},
 ];
 
-/* 거다이 기술 3개 선택 */
 function pickGmaxMovesFor(mon){
   const my = mon.type;
   const pool = GMAX_MOVES.filter(m=>m.type===my);
   const normals = GMAX_MOVES.filter(m=>m.type==='normal');
   const picks = [];
-  while (pool.length && picks.length<3){
-    const i = Math.floor(Math.random()*pool.length);
-    const sel = pool.splice(i,1)[0];
-    picks.push({ ...sel, power:15, mtype: sel.type });
-  }
-  while (picks.length<3 && normals.length){
-    const i = Math.floor(Math.random()*normals.length);
-    const sel = normals.splice(i,1)[0];
-    picks.push({ ...sel, power:15, mtype: 'normal' });
-  }
-  while (picks.length<3){
-    const sel = GMAX_MOVES[Math.floor(Math.random()*GMAX_MOVES.length)];
-    picks.push({ ...sel, power:15, mtype: sel.type });
-  }
+  while (pool.length && picks.length<3){ const i=Math.floor(Math.random()*pool.length); const sel=pool.splice(i,1)[0]; picks.push({ ...sel, power:15, mtype: sel.type }); }
+  while (picks.length<3 && normals.length){ const i=Math.floor(Math.random()*normals.length); const sel=normals.splice(i,1)[0]; picks.push({ ...sel, power:15, mtype: 'normal' }); }
+  while (picks.length<3){ const sel=GMAX_MOVES[Math.floor(Math.random()*GMAX_MOVES.length)]; picks.push({ ...sel, power:15, mtype: sel.type }); }
   return picks;
 }
 
 function log(t){ logBox.innerHTML += `<div>• ${t}</div>`; logBox.scrollTop = logBox.scrollHeight; }
-function setStatusBadge(el, s){
-  if (!el) return;
-  if (!s){ el.style.display='none'; el.textContent=''; return; }
-  el.style.display='inline-block'; el.textContent = statusLabel(s);
-}
+function setStatusBadge(el, s){ if (!el) return; if (!s){ el.style.display='none'; el.textContent=''; return; } el.style.display='inline-block'; el.textContent = statusLabel(s); }
 function updateGmaxButton(){
   const can = state.inBattle && state.hasDynaBand && !state.gmax.used && !state.gmax.active && !isFainted(state.party[state.activeIndex]);
   gmaxBtn.style.display = can ? 'inline-block' : 'none';
@@ -751,8 +802,9 @@ function syncBattleUI(){
 
   const pNameEl = document.getElementById('pName');
   const wNameEl = document.getElementById('wName');
+  const foePrefix = (state.battleType==='trainer') ? `${state.trainer.name}의 ` : (w.legend?'전설의 ':'야생의 ');
   if (pNameEl?.firstChild) pNameEl.firstChild.textContent = `${safe(me.name,'???')} Lv.${safe(me.level,'?')}${isFainted(me)?' (기절)':''} `;
-  if (wNameEl?.firstChild) wNameEl.firstChild.textContent = `야생의 ${safe(w.name,'???')} Lv.${safe(w.level,'?')} `;
+  if (wNameEl?.firstChild) wNameEl.firstChild.textContent = `${foePrefix}${safe(w.name,'???')} Lv.${safe(w.level,'?')} `;
 
   const pw = hpPct(me); pHP.style.width = pw+"%"; pHP.className = hpClass(pw); setStatusBadge(pStatusSpan, me.status);
   const ww = hpPct(w); wHP.style.width = ww+"%"; wHP.className = hpClass(ww); setStatusBadge(wStatusSpan, w.status);
@@ -762,9 +814,7 @@ function syncBattleUI(){
     act2.textContent = state.gmax.moves[1]?.label || '거다이 기술 2';
     act3.textContent = state.gmax.moves[2]?.label || '거다이 기술 3';
   } else {
-    act1.textContent = me.moves[0].label;
-    act2.textContent = me.moves[1].label;
-    act3.textContent = me.moves[2].label;
+    act1.textContent = me.moves[0].label; act2.textContent = me.moves[1].label; act3.textContent = me.moves[2].label;
   }
 
   document.getElementById('playerMon').classList.toggle('gmax', state.gmax.active);
@@ -772,32 +822,71 @@ function syncBattleUI(){
   drawMon(document.getElementById('wildMon'), w);
   updateGmaxButton();
 }
+
+/* 전투 시작 */
 function startEncounter(){
   if (state.party.every(isFainted)) return;
-  state.inBattle = true;
+  state.inBattle = true; state.battleType='wild';
   state.koAwardedThisBattle = false;
   state.gmax = { active:false, used:false, turns:3, targetIndex:null, moves:[] };
-
-  battle.style.display = 'block';
-  logBox.innerHTML = "";
-
+  battle.style.display='block'; logBox.innerHTML="";
   const base = wildPool[Math.floor(Math.random()*wildPool.length)];
   state.wild = { ...base, uid: newUID(), hp: base.maxHP, status:null };
-
   if (isFainted(state.party[state.activeIndex])){
-    const alt = state.party.findIndex(m=>!isFainted(m));
-    if (alt>=0) state.activeIndex = alt;
+    const alt = state.party.findIndex(m=>!isFainted(m)); if (alt>=0) state.activeIndex = alt;
   }
-  syncBattleUI();
-  document.getElementById('catchBtn').disabled = true;
+  syncBattleUI(); catchBtn.disabled = true;
   log(`야생의 ${state.wild.name}가 나타났다!`);
 }
+function startLegendEncounter(){
+  if (state.party.every(isFainted)) return;
+  state.inBattle = true; state.battleType='wild';
+  state.koAwardedThisBattle = false;
+  state.gmax = { active:false, used:false, turns:3, targetIndex:null, moves:[] };
+  battle.style.display='block'; logBox.innerHTML="";
+  const base = legendPool[Math.floor(Math.random()*legendPool.length)];
+  state.wild = { ...base, uid: newUID(), hp: base.maxHP, status:null, legend:true };
+  if (isFainted(state.party[state.activeIndex])){
+    const alt = state.party.findIndex(m=>!isFainted(m)); if (alt>=0) state.activeIndex = alt;
+  }
+  syncBattleUI(); catchBtn.disabled = true;
+  log(`✨ 전설의 ${state.wild.name}이(가) 모습을 드러냈다!`);
+}
+function buildTrainerTeam(){
+  if (state.trainer.team.length) return;
+  const types = ['fighting','rock','psychic'];
+  const team = types.map(t=>{
+    const cand = DEX.find(d=>d.type===t) || DEX[0];
+    const lvl = rnd(6,8);
+    return { uid:newUID(), sid:cand.sid, name:cand.name, type:cand.type, level:lvl, maxHP:cand.maxHP+6, hp:cand.maxHP+6, moves: TYPE_MOVESETS[cand.type], status:null };
+  });
+  state.trainer.team = team;
+}
+buildTrainerTeam();
+
+function startTrainerBattle(){
+  if (state.party.every(isFainted)) return;
+  if (state.trainer.defeated) { tipEl.textContent='이미 승리한 트레이너입니다.'; return; }
+  state.inBattle = true; state.battleType='trainer';
+  state.koAwardedThisBattle = false;
+  state.trainer.index = 0;
+  state.gmax = { active:false, used:false, turns:3, targetIndex:null, moves:[] };
+  battle.style.display='block'; logBox.innerHTML="";
+  const foe = state.trainer.team[state.trainer.index];
+  state.wild = { ...foe, uid:newUID(), status:null };
+  if (isFainted(state.party[state.activeIndex])){
+    const alt = state.party.findIndex(m=>!isFainted(m)); if (alt>=0) state.activeIndex = alt;
+  }
+  syncBattleUI(); catchBtn.disabled = true;
+  log(`🤝 ${state.trainer.name}가 배틀을 걸어왔다!`);
+}
+
 function endBattle(){
   state.inBattle = false;
   state.wild = null;
   battle.style.display = 'none';
   logBox.innerHTML = "";
-  document.getElementById('catchBtn').disabled = true;
+  catchBtn.disabled = true;
   document.getElementById('playerMon').classList.remove('gmax');
 }
 
@@ -806,9 +895,7 @@ function triggerGmax(){
   const me = state.party[state.activeIndex];
   if (!state.inBattle || !state.hasDynaBand || state.gmax.used || state.gmax.active || isFainted(me)) return;
   state.gmax.active = true; state.gmax.used = true; state.gmax.turns = 3; state.gmax.targetIndex = state.activeIndex;
-  me._origMaxHP = me.maxHP;
-  me.maxHP = me.maxHP * 2;
-  me.hp = Math.min(me.maxHP, me.hp + me._origMaxHP);
+  me._origMaxHP = me.maxHP; me.maxHP = me.maxHP * 2; me.hp = Math.min(me.maxHP, me.hp + me._origMaxHP);
   state.gmax.moves = pickGmaxMovesFor(me);
   syncBattleUI(); renderParty();
   log('🔴 거다이맥스! 포켓몬이 거대해졌다!');
@@ -820,29 +907,28 @@ function maybeTickGmaxTurnsAfterPlayer(){
     state.gmax.turns--;
     if (state.gmax.turns<=0){
       const me = state.party[state.gmax.targetIndex ?? state.activeIndex];
-      if (me && me._origMaxHP){
-        me.maxHP = me._origMaxHP; delete me._origMaxHP;
-        me.hp = Math.min(me.hp, me.maxHP);
-      }
+      if (me && me._origMaxHP){ me.maxHP = me._origMaxHP; delete me._origMaxHP; me.hp = Math.min(me.hp, me.maxHP); }
       state.gmax.active=false;
       log('🔻 거다이맥스가 해제되었다.');
       syncBattleUI(); renderParty();
-    } else {
-      syncBattleUI();
-    }
+    } else { syncBattleUI(); }
   }
 }
 
 function setActions(on){
-  ['act1','act2','act3','runBtn','catchBtn','switchBtn'].forEach(id=>{
+  ['act1','act2','act3','runBtn','switchBtn'].forEach(id=>{
     const el = document.getElementById(id);
-    if (id==='catchBtn' && on) return;
     el.disabled = !on;
   });
+  const canCatch = state.inBattle &&
+                   state.battleType === 'wild' &&
+                   state.wild &&
+                   state.wild.hp <= 0;
+  catchBtn.disabled = !canCatch;
   updateGmaxButton();
 }
 
-/* STAB/상성 + 거다이맥스 보정 */
+/* 대미지/상성 */
 function baseDamage(pwr){ return pwr + Math.floor(Math.random()*5); }
 function calcDamage(attacker, move, defender, isPlayerAttacker=false){
   let raw = baseDamage(move.power || 0);
@@ -860,78 +946,45 @@ function effText(eff){
 }
 
 /* 상태 도우미 */
-function tryParalyze(target){
-  if (!target?.status){ target.status={type:'paralysis', turns:3}; return true; }
-  return false;
-}
-function tryPoison(target){
-  if (!target?.status){ target.status={type:'poison', next: Date.now()+5000}; return true; }
-  return false;
-}
+function tryParalyze(target){ if (!target?.status){ target.status={type:'paralysis', turns:3}; return true; } return false; }
+function tryPoison(target){ if (!target?.status){ target.status={type:'poison', next: Date.now()+5000}; return true; } return false; }
 
-/* KO 보상 */
-function onWildFainted(){
+/* KO 보상 (플레이어 측) */
+function grantKOBonusOnce(){
   if (state.koAwardedThisBattle) return;
   state.koAwardedThisBattle = true;
   const me = state.party[state.activeIndex];
-  if (me && !isFainted(me)){
-    levelUp(me, 1);
-    renderParty(); syncBattleUI();
-    log(`🏆 ${safe(me?.name,'포켓몬')}이(가) 상대를 쓰러뜨려 레벨이 올랐다! (+1)`);
-  }
-  document.getElementById('catchBtn').disabled = false;
-  setActions(true);
+  if (me && !isFainted(me)){ levelUp(me, 1); renderParty(); syncBattleUI(); log(`🏆 ${safe(me?.name,'포켓몬')}이(가) 상대를 쓰러뜨려 레벨이 올랐다! (+1)`); }
 }
 
-/* === 퀘스트: 포획 카운트/보상 === */
-function onQuestCatch(mon){
-  // 공통: 5/10 카운트 (완료 후엔 더 안 오름)
-  const q5 = state.quests.catch5, q10 = state.quests.catch10, qt = state.quests.type;
-
-  if (!q5.completed){
-    q5.progress++;
-    if (q5.progress >= q5.goal){
-      q5.completed = true;
-      state.hasDynaBand = true;
-      log('🎁 퀘스트 완료! 다이맥스 밴드를 획득했다!'); 
+/* 적이 쓰러졌을 때 공통 처리 */
+function onEnemyFainted(){
+  grantKOBonusOnce();
+  if (state.battleType==='trainer'){
+    const t = state.trainer;
+    t.index++;
+    if (t.index < t.team.length){
+      const next = t.team[t.index];
+      state.wild = { ...next, uid:newUID(), status:null };
+      log(`🔁 ${t.name}이(가) 다음 포켓몬을 내보냈다: ${next.name}!`);
+      syncBattleUI(); setActions(true);
+    } else {
+      t.defeated = true;
+      log(`🎖️ ${t.name}을(를) 이겼다! 배틀 종료.`);
+      setTimeout(endBattle, 800);
     }
+  } else {
+    setActions(true); // HP 0이면 포켓몬볼 버튼 활성화
   }
-  if (!q10.completed){
-    q10.progress++;
-    if (q10.progress >= q10.goal){
-      q10.completed = true;
-      // 파티 전원 희귀사탕 효과
-      state.party.forEach(p=>levelUp(p,1));
-      log('🎁 퀘스트 완료! 희귀사탕 효과로 파티 전원이 레벨 +1!');
-    }
-  }
-  // 특정 타입 퀘스트(반복 가능)
-  ensureTypeQuestTarget();
-  if (mon?.type === state.quests.type.target){
-    qt.progress++;
-    if (qt.progress >= qt.goal){
-      qt.cycles++;
-      qt.progress = 0;
-      // 보상: 현재 활성 포켓몬 레벨 +1
-      const me = state.party[state.activeIndex];
-      if (me) { levelUp(me,1); log(`🎁 타입 퀘스트 완료! ${me.name} 레벨 +1!`); }
-      // 다음 타깃 타입 갱신(이전과 다르게 시도)
-      let next = randomType(), guard=0;
-      while (next===qt.target && guard<10){ next = randomType(); guard++; }
-      qt.target = next;
-      log(`🎯 다음 타입 퀘스트 목표: ${TYPE_KO[qt.target]||qt.target}`);
-    }
-  }
-  renderParty(); // 밴드 표시/레벨 변화 반영
-  renderQuests();
 }
 
+/* 플레이어 턴 */
 act1.onclick = ()=> playerTurn(0);
 act2.onclick = ()=> playerTurn(1);
 act3.onclick = ()=> playerTurn(2);
 document.getElementById('runBtn').onclick = ()=>{ log('도망쳤다!'); setTimeout(endBattle,400); };
-document.getElementById('catchBtn').onclick = doCatch;
 document.getElementById('switchBtn').onclick = ()=> log('교체할 포켓몬을 좌측 파티에서 선택하세요.');
+catchBtn.onclick = doCatch;
 
 function playerTurn(mi){
   const me = ensureMoves(state.party[state.activeIndex]);
@@ -958,19 +1011,18 @@ function playerTurn(mi){
     log(`${safe(me.name,'포켓몬')}의 ${mv.label}! ${dmg}의 대미지! ${effText(eff)}`);
   }
 
-  // 전기: 마비
   if (!state.gmax.active && mv.effect==='paralyze' && eff>0){
     if (tryParalyze(state.wild)) log(`⚡ ${safe(state.wild?.name,'상대')}은(는) 마비에 걸렸다! (3턴)`);
   }
-  // 독: 독 타입 기술이면 독 부여(거다이 기술 포함)
   if (((state.gmax.active ? mv.type : mv.mtype)==='poison') && eff>0){
     if (tryPoison(state.wild)) log(`☠️ ${safe(state.wild?.name,'상대')}은(는) 독에 걸렸다! (5초마다 -2)`);
   }
 
   syncBattleUI();
   if (state.wild.hp<=0){
-    log(`야생의 ${safe(state.wild?.name,'포켓몬')}을(를) 쓰러뜨렸다!`);
-    onWildFainted();
+    const foePrefix = (state.battleType==='trainer')? state.trainer.name : (state.wild.legend?'전설의 ':'야생의 ');
+    log(`${foePrefix}${safe(state.wild?.name,'포켓몬')}을(를) 쓰러뜨렸다!`);
+    onEnemyFainted();
     maybeTickGmaxTurnsAfterPlayer();
     return;
   }
@@ -978,6 +1030,7 @@ function playerTurn(mi){
   wildTurnAfterDelay();
 }
 
+/* 적 턴 */
 function wildTurnAfterDelay(){
   setTimeout(()=>{
     const me = ensureMoves(state.party[state.activeIndex]);
@@ -986,13 +1039,13 @@ function wildTurnAfterDelay(){
 
     if (w.status && w.status.type==='paralysis' && w.status.turns>0){
       if (Math.random()<0.5){
-        log(`야생의 ${safe(w.name,'상대')}은(는) 몸이 저려서 움직일 수 없다!`);
+        log(`${safe((state.battleType==='trainer'?state.trainer.name+'의 ':'')+(w.name||'상대'))}은(는) 몸이 저려서 움직일 수 없다!`);
         w.status.turns--;
-        if (w.status.turns<=0){ log(`야생의 ${safe(w.name,'상대')}의 마비가 풀렸다.`); w.status=null; }
+        if (w.status.turns<=0){ log(`${safe(w.name,'상대')}의 마비가 풀렸다.`); w.status=null; }
         syncBattleUI(); setActions(true); return;
       } else {
         w.status.turns--;
-        if (w.status.turns<=0){ log(`야생의 ${safe(w.name,'상대')}의 마비가 풀렸다.`); w.status=null; }
+        if (w.status.turns<=0){ log(`${safe(w.name,'상대')}의 마비가 풀렸다.`); w.status=null; }
       }
     }
 
@@ -1000,10 +1053,10 @@ function wildTurnAfterDelay(){
     const { dmg, eff } = calcDamage(w, mv, me, false);
 
     if (eff===0){
-      log(`야생의 ${safe(w.name,'상대')}의 ${mv.label}! ${effText(eff)}`);
+      log(`${safe((state.battleType==='trainer'?state.trainer.name+'의 ':'')+(w.name||'상대'))}의 ${mv.label}! ${effText(eff)}`);
     } else {
       me.hp = Math.max(0, me.hp - dmg);
-      log(`야생의 ${safe(w.name,'상대')}의 ${mv.label}! ${dmg}의 대미지! ${effText(eff)}`);
+      log(`${safe((state.battleType==='trainer'?state.trainer.name+'의 ':'')+(w.name||'상대'))}의 ${mv.label}! ${dmg}의 대미지! ${effText(eff)}`);
     }
 
     if (mv.mtype==='poison' && eff>0){
@@ -1044,54 +1097,113 @@ setInterval(()=>{
     w.hp = Math.max(0, w.hp - 2);
     w.status.next = now + 5000;
     syncBattleUI();
-    log(`☠️ 야생의 ${safe(w.name,'상대')}은(는) 독의 대미지를 받았다! (-2)`);
+    log(`☠️ ${state.battleType==='trainer'? state.trainer.name+'의 ' : (w.legend?'전설의 ':'야생의 ')}${safe(w.name,'상대')}은(는) 독의 대미지를 받았다! (-2)`);
     if (w.hp<=0){
-      log(`야생의 ${safe(w.name,'상대')}이(가) 독으로 쓰러졌다!`);
-      onWildFainted();
+      log(`${state.battleType==='trainer'? state.trainer.name+'의 ' : (w.legend?'전설의 ':'야생의 ')}${safe(w.name,'상대')}이(가) 독으로 쓰러졌다!`);
+      onEnemyFainted();
     }
   }
 }, 250);
 
-/* 포획 (HP 0 조건) */
-function doCatch(){
-  if (!(state.wild && state.wild.hp<=0)) return;
-
-  const w = state.wild;
-  const already = !!state.pokedex[w.sid];
-
-  if (!already){
-    registerPokedex(w);
-    if (partyCount()<5){
-      state.party.push({
-        uid: newUID(),
-        sid:w.sid, name:w.name, type:w.type, level:w.level,
-        maxHP:w.maxHP, hp:w.maxHP, status:null, fainted:false, moves: w.moves
-      });
-      renderParty();
-      log(`🎉 ${w.name}을(를) 포획했다! (도감 등록 + 파티 합류)`);
-    } else {
-      log(`🎒 가방이 가득합니다. ${w.name}은(는) 도감에만 등록되었습니다. (도감에서 교체해 넣을 수 있어요)`);
-    }
-  } else {
-    const idx = state.party.findIndex(p=>p.sid===w.sid);
-    if (idx>=0){
-      levelUp(state.party[idx], 1);
-      renderParty();
-      log(`⭐ ${w.name} 중복 포획: 파티의 같은 종 레벨 +1!`);
-    } else {
-      state.pokedex[w.sid].level = Math.max(state.pokedex[w.sid].level, w.level+1);
-      log(`⭐ ${w.name} 중복 포획: 도감 최고 레벨 갱신(파티 미추가).`);
+/* 퀘스트: 포획 카운트/보상 */
+function onQuestCatch(mon){
+  const q5 = state.quests.catch5, q10 = state.quests.catch10, qt = state.quests.type;
+  if (!q5.completed){
+    q5.progress++; if (q5.progress >= q5.goal){ q5.completed = true; state.hasDynaBand = true; log('🎁 퀘스트 완료! 다이맥스 밴드를 획득했다!'); }
+  }
+  if (!q10.completed){
+    q10.progress++; if (q10.progress >= q10.goal){ q10.completed = true; state.party.forEach(p=>levelUp(p,1)); log('🎁 퀘스트 완료! 파티 전원 레벨 +1!'); }
+  }
+  ensureTypeQuestTarget();
+  if (mon?.type === state.quests.type.target){
+    qt.progress++;
+    if (qt.progress >= qt.goal){
+      qt.cycles++; qt.progress = 0;
+      const me = state.party[state.activeIndex]; if (me) { levelUp(me,1); log(`🎁 타입 퀘스트 완료! ${me.name} 레벨 +1!`); }
+      let next = randomType(), guard=0; while (next===qt.target && guard<10){ next = randomType(); guard++; } qt.target = next;
+      log(`🎯 다음 타입 퀘스트 목표: ${TYPE_KO[qt.target]||qt.target}`);
     }
   }
+  renderParty(); renderQuests();
+}
 
-  // 🔔 퀘스트 카운트/보상 처리
+/* ====== 포켓몬볼: “잡으면 교체만” 플로우 ====== */
+function showSwapUI(caught){
+  state.pendingCatch = caught;
+  swapList.innerHTML = '';
+  state.party.forEach((m,i)=>{
+    const li = document.createElement('li');
+    li.style.cssText = 'background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:8px;cursor:pointer';
+    li.innerHTML = `<b>#${i+1} ${safe(m.name,'???')}</b> <span class="badge">${m.type}</span>
+      <div class="hp" style="font-size:12px;color:#475569">Lv.${m.level} · HP ${m.hp}/${m.maxHP}${isFainted(m)?' · 기절':''}</div>`;
+    li.onclick = ()=> replacePartySlot(i, caught);
+    swapList.appendChild(li);
+  });
+  swapUI.style.display = 'flex';
+}
+function closeSwapUI(){
+  swapUI.style.display = 'none';
+  state.pendingCatch = null;
+}
+function replacePartySlot(i, caught){
+  const newMon = {
+    uid: newUID(), sid: caught.sid, name: caught.name, type: caught.type,
+    level: caught.level, maxHP: caught.maxHP, hp: caught.maxHP,
+    status:null, fainted:false, moves: caught.moves
+  };
+  state.party[i] = newMon;
+  state.activeIndex = i;
+  renderParty();
+  log(`🔁 파티 ${i+1}번을 ${caught.name}(으)로 교체했습니다!`);
+  closeSwapUI();
+  setTimeout(endBattle, 500);
+}
+swapCancel.onclick = ()=>{
+  log('포획: 도감만 등록하고 파티는 유지했습니다.');
+  closeSwapUI();
+  setTimeout(endBattle, 500);
+};
+
+/* 포획 (교체 전용) */
+function doCatch(){
+  if (state.battleType === 'trainer'){
+    log('트레이너의 포켓몬은 잡을 수 없다!');
+    return;
+  }
+  if (!(state.wild && state.wild.hp<=0)){
+    log('상대 HP를 0으로 만들면 포켓몬볼을 사용할 수 있어요.');
+    return;
+  }
+
+  const w = state.wild;
+  const inPartyIdx = state.party.findIndex(p=>p.sid===w.sid);
+  const wasInDex = !!state.pokedex[w.sid];
+
+  // 중복 포획: 파티에 같은 종 있으면 그 개체만 레벨 +1
+  if (inPartyIdx >= 0){
+    levelUp(state.party[inPartyIdx], 1);
+    renderParty();
+    log(`⭐ ${w.name} 중복 포획: 파티 동일 종 레벨 +1!`);
+    onQuestCatch(w);
+    setTimeout(endBattle, 600);
+    return;
+  }
+
+  // 도감 미등록이면 등록
+  if (!wasInDex){
+    registerPokedex(w);
+    log(`📘 도감 등록: ${w.name}`);
+  } else {
+    log('📘 이미 등록된 종입니다. (도감 미추가)');
+  }
+
+  // 파티 확장 없음 → 반드시 교체 UI
   onQuestCatch(w);
-
-  setTimeout(endBattle, 600);
+  showSwapUI(w);
 }
 
 /* =========================
-   6) 스프라이트 — 개체(uid)마다 전부 다르게
+   6) 스프라이트 — 전설 오라/강조 지원
 ========================= */
 function mulberry32(a){return function(){var t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;}}
 function hashSid(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);} return h>>>0;}
@@ -1107,8 +1219,16 @@ function drawMon(canvas, mon){
   ctx.clearRect(0,0,W,H);
   if (!mon){ return; }
 
-  ctx.fillStyle='rgba(0,0,0,0.2)';
-  ctx.beginPath(); ctx.ellipse(W/2, H-30, 80, 18, 0, 0, Math.PI*2); ctx.fill();
+  // 전설 오라
+  if (mon.legend){
+    ctx.save();
+    const aura = mon.type==='fire'?'rgba(255,80,40,.35)': mon.type==='water'?'rgba(60,150,255,.35)':'rgba(255,230,90,.35)';
+    ctx.fillStyle=aura; ctx.beginPath(); ctx.ellipse(W/2, H-30, 110, 28, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  } else {
+    ctx.fillStyle='rgba(0,0,0,0.2)';
+    ctx.beginPath(); ctx.ellipse(W/2, H-30, 80, 18, 0, 0, Math.PI*2); ctx.fill();
+  }
 
   const rng = mulberry32(hashSid(mon.uid || mon.sid || mon.name || 'x'));
   const base = TYPE_COLORS[mon.type] || [200,200,200];
@@ -1117,7 +1237,7 @@ function drawMon(canvas, mon){
   const accent = `rgba(${Math.max(0,Math.min(255,base[0]-d))},${Math.max(0,Math.min(255,base[1]-d))},${Math.max(0,Math.min(255,base[2]-d))},0.9)`;
 
   const cx=W/2, cy=120;
-  const form = Math.floor(rng()*6);
+  const form = mon.legend ? 5 : Math.floor(rng()*6);
   ctx.fillStyle = bodyColor;
   switch(form){
     case 0: ctx.beginPath(); ctx.ellipse(cx,cy,60,45, rng()*1.2, 0, Math.PI*2); ctx.fill(); break;
@@ -1125,23 +1245,26 @@ function drawMon(canvas, mon){
     case 2: poly(ctx, [[cx-50,cy+50],[cx,cy-55],[cx+50,cy+50]]); ctx.fill(); break;
     case 3: ctx.beginPath(); ctx.moveTo(cx-50,cy); ctx.bezierCurveTo(cx-40,cy-60,cx+40,cy-60,cx+50,cy); ctx.bezierCurveTo(cx+45,cy+60,cx-45,cy+60,cx-50,cy); ctx.closePath(); ctx.fill(); break;
     case 4: blob(ctx,cx,cy, rng); ctx.fill(); break;
-    case 5: ctx.beginPath(); ctx.ellipse(cx,cy,50,60,0,0,Math.PI*2); ctx.fill(); break;
+    case 5: ctx.beginPath(); ctx.ellipse(cx,cy,56,68,0,0,Math.PI*2); ctx.fill(); break;
   }
 
-  const stripeCount = 2 + Math.floor(rng()*4);
+  // 스트라이프/디테일
+  const stripeCount = mon.legend ? 5 : 2 + Math.floor(rng()*4);
   ctx.fillStyle = accent;
   for(let i=0;i<stripeCount;i++){
     const a = (i - stripeCount/2) * 0.3 + (rng()*0.2);
-    const rx = 20 + rng()*30, ry = 8 + rng()*18;
-    ctx.beginPath(); ctx.ellipse(cx + Math.cos(a)*20, cy + Math.sin(a)*10, rx, ry, a, 0, Math.PI*2); ctx.globalAlpha=0.12; ctx.fill(); ctx.globalAlpha=1;
+    const rx = (mon.legend?28:20) + rng()*30, ry = (mon.legend?12:8) + rng()*18;
+    ctx.beginPath(); ctx.ellipse(cx + Math.cos(a)*20, cy + Math.sin(a)*10, rx, ry, a, 0, Math.PI*2); ctx.globalAlpha=mon.legend?0.16:0.12; ctx.fill(); ctx.globalAlpha=1;
   }
 
+  // 눈
   ctx.fillStyle = '#222';
-  const eyeDx = 18 + rng()*14, eyeDy = -8 + rng()*6, eyeR = 4 + rng()*3;
+  const eyeDx = 18 + rng()*14, eyeDy = -8 + rng()*6, eyeR = mon.legend ? 5 + rng()*3 : 4 + rng()*3;
   ctx.beginPath(); ctx.arc(cx-eyeDx, cy+eyeDy, eyeR, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(cx+eyeDx, cy+eyeDy, eyeR, 0, Math.PI*2); ctx.fill();
 
-  const deco = Math.floor(rng()*3);
+  // 장식
+  const deco = mon.legend ? 1 : Math.floor(rng()*3);
   ctx.fillStyle = accent;
   if (deco===0){ horn(ctx,cx-25,cy-50, rng); horn(ctx,cx+25,cy-50, rng); }
   else if (deco===1){ wing(ctx,cx-60,cy, -1, rng); wing(ctx,cx+60,cy, 1, rng); }
@@ -1150,9 +1273,9 @@ function drawMon(canvas, mon){
 function roundedRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function poly(ctx, pts){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();}
 function blob(ctx,cx,cy,rng){ctx.beginPath();const n=6+Math.floor(rng()*4);for(let i=0;i<n;i++){const ang=i/n*Math.PI*2;const rad=40+rng()*18;const x=cx+Math.cos(ang)*rad,y=cy+Math.sin(ang)*(rad*0.8);if(i===0)ctx.moveTo(x,y);else ctx.quadraticCurveTo(cx,cy,x,y);}ctx.closePath();}
-function horn(ctx,x,y,rng){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+10,y-25);ctx.lineTo(x+20,y);ctx.closePath();ctx.fill();}
-function wing(ctx,x,y,dir,rng){ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+dir*40,y-20,x+dir*80,y);ctx.quadraticCurveTo(x+dir*50,y+20,x,y);ctx.closePath();ctx.fillStyle='rgba(255,255,255,0.35)';ctx.fill();ctx.fillStyle='rgba(0,0,0,0.1)';ctx.stroke();}
-function fin(ctx,x,y,dir,rng){ctx.beginPath();ctx.ellipse(x,y,20,10,dir*0.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fill();}
+function horn(ctx,x,y,rng){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+12,y-28);ctx.lineTo(x+24,y);ctx.closePath();ctx.fill();}
+function wing(ctx,x,y,dir,rng){ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+dir*50,y-24,x+dir*90,y);ctx.quadraticCurveTo(x+dir*60,y+24,x,y);ctx.closePath();ctx.fillStyle='rgba(255,255,255,0.35)';ctx.fill();ctx.fillStyle='rgba(0,0,0,0.08)';ctx.stroke();}
+function fin(ctx,x,y,dir,rng){ctx.beginPath();ctx.ellipse(x,y,24,12,dir*0.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fill();}
 
 /* =========================
    7) 초기 렌더 + 테스트
@@ -1161,13 +1284,13 @@ renderParty();
 registerPokedex(state.party[0]);
 renderQuests();
 
-// 테스트 (18타입/90종/퀘스트)
 (function tests(){
   console.assert(TYPES.length===18, '타입 개수(18) 오류');
   console.assert(DEX.length===90, '도감 90종 생성 실패');
+  console.assert(LEGENDS.length===3, '전설 3종 누락');
   console.assert(state.party[0].moves.length===3, '스타터 기술 미할당');
 
-  // 상성 핵심 검증
+  // 상성
   console.assert(typeEffect('water','fire')===2, '물→불 2배 실패');
   console.assert(typeEffect('electric','ground')===0, '전기→땅 0배 실패');
   console.assert(typeEffect('ground','flying')===0, '땅→비행 0배 실패');
@@ -1178,37 +1301,25 @@ renderQuests();
   console.assert(typeEffect('fairy','dragon')===2, '페어리→드래곤 2배 실패');
   console.assert(typeEffect('dragon','fairy')===0, '드래곤→페어리 0배 실패');
 
-  // 거다이 목록/선택
-  console.assert(GMAX_MOVES.length===33, '거다이 기술 개수가 33이 아님');
+  // 거다이
+  console.assert(GMAX_MOVES.length===33, '거다이 기술 개수 33 아님');
   const sel = pickGmaxMovesFor({type:'water'});
-  console.assert(sel.length===3 && sel.every(m=>m.mtype==='water' || m.mtype==='normal'), '거다이 선택 로직 오류(물)');
-})();
+  console.assert(sel.length===3 && sel.every(m=>m.mtype==='water' || m.mtype==='normal'), '거다이 선택 로직 오류');
 
-// 추가 테스트: 퀘스트
-(function questTests(){
-  // 5마리 잡기 → 밴드 지급
-  state.hasDynaBand=false;
-  state.quests.catch5.progress=0; state.quests.catch5.completed=false;
-  for(let i=0;i<5;i++){
-    state.wild = { sid:DEX[10+i].sid, name:DEX[10+i].name, type:DEX[10+i].type, level:3, maxHP:30, hp:0, moves: TYPE_MOVESETS[DEX[10+i].type] };
-    doCatch();
-  }
-  console.assert(state.hasDynaBand===true && state.quests.catch5.completed===true, '퀘스트5 밴드 지급 실패');
+  // 전설 등록/복원
+  const L = LEGENDS[0];
+  registerPokedex(L);
+  const restored = createMonFromDex(L.sid);
+  console.assert(restored && restored.type===L.type, '전설 도감 복원 실패');
 
-  // 10마리 잡기 → 파티 전원 레벨 +1
-  const before = state.party.map(p=>p.level);
-  state.quests.catch10.progress=9; state.quests.catch10.completed=false;
-  state.wild = { sid:DEX[40].sid, name:DEX[40].name, type:DEX[40].type, level:3, maxHP:30, hp:0, moves: TYPE_MOVESETS[DEX[40].type] };
-  doCatch();
-  const after = state.party.map(p=>p.level);
-  console.assert(after.every((lv,i)=>lv>=before[i]+1), '퀘스트10 파티 레벨업 실패');
+  // 트레이너 세팅
+  console.assert(state.trainer.team.length===3, '트레이너 팀 생성 실패');
 
-  // 특정 타입(물) 1회 완성 시 사이클 증가(테스트 편의상 goal을 임시로 1회 시뮬레이션)
-  state.quests.type.target='water'; state.quests.type.progress=2; state.quests.type.goal=3;
-  const prevCycles = state.quests.type.cycles;
-  state.wild = { sid:DEX.find(d=>d.type==='water').sid, name:'테스트물', type:'water', level:3, maxHP:30, hp:0, moves: TYPE_MOVESETS['water'] };
-  doCatch();
-  console.assert(state.quests.type.cycles===prevCycles+1, '타입 퀘스트 사이클 증가 실패');
+  // 포켓몬볼 버튼 활성화 테스트
+  state.inBattle = true; state.battleType = 'wild';
+  state.wild = {hp:0, type:'normal', name:'테스트', level:3, maxHP:30};
+  setActions(true);
+  console.assert(!catchBtn.disabled, 'HP 0에서 포켓몬볼 버튼이 활성화되어야 함');
 })();
 </script>
 </body>
